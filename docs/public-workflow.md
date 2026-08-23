@@ -67,3 +67,14 @@ packaging lifecycle. Publish artifact files and checksums through the release
 workflow only after source and tag verification. Artifact publication is not a
 source-history push and must not be used to publish local configuration or
 build directories.
+## Cloudflare Pages deployment
+
+The public repository deploys the dependency-free `site/` directory to the
+`scrcpy-launcher` Cloudflare Pages project from public `main`. The project uses
+no build command, has no environment variables, and publishes to the generated
+`pages.dev` hostname plus the configured custom domains. Keep website changes
+on `public-main`, preview them locally, run the site tests, and synchronize them
+with `Publish-PublicSnapshot.ps1`; a successful public-main update should then
+appear as an automatic Pages deployment. Do not change DNS or custom domains
+outside the approved Cloudflare configuration.
+
