@@ -1,3 +1,5 @@
+Project website: https://scrcpy-launcher.link/
+
 # scrcpy-launcher user guide
 
 This guide covers the installed and portable Windows editions. For the shortest

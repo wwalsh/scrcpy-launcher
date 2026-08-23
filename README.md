@@ -1,3 +1,5 @@
+Project website: https://scrcpy-launcher.link/
+
 # scrcpy-launcher
 
 scrcpy-launcher is a Windows 11 system-tray application for saving and launching
