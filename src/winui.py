@@ -19,7 +19,6 @@ MB_SETFOREGROUND = 0x00010000
 SW_SHOWNORMAL = 1
 IDYES = 6
 IDNO = 7
-IDCANCEL = 2
 
 
 class DialogChoice(Enum):

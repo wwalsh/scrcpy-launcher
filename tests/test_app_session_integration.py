@@ -88,7 +88,6 @@ class AppSessionIntegrationTests(unittest.TestCase):
 
             shell._cancel()
 
-            self.assertFalse(shell._saved)
             shell._destroy_dialog.assert_called_once_with()
             self.assertEqual(path.read_bytes(), original)
             self.assertEqual(Config(path).sessions[0].args, ["--serial=ABC", "--no-audio"])

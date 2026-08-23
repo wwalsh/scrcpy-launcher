@@ -40,7 +40,6 @@ _WINDOW_CLASS = "ScrcpyTrayWindow"
 
 # Win32 constants
 NIM_ADD = 0
-NIM_MODIFY = 1
 NIM_DELETE = 2
 NIF_MESSAGE = 0x00000001
 NIF_ICON = 0x00000002
@@ -85,17 +84,6 @@ class _NOTIFYICONDATAW(ctypes.Structure):
         ("hBalloonIcon", w.HICON),
     ]
     _anonymous_ = ["version_or_timeout"]
-
-
-class _NOTIFYICONIDENTIFIER(ctypes.Structure):
-    _fields_ = [
-        ("cbSize", w.DWORD),
-        ("hWnd", w.HWND),
-        ("uID", w.UINT),
-        ("guidItem", _GUID),
-        ("nlid", w.ULONG * 2),
-        ("reserved", w.ULONG * 2),
-    ]
 
 
 _shell32 = ctypes.windll.shell32

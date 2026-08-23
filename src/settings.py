@@ -341,7 +341,6 @@ class _SettingsDialog:
     def __init__(self, parent, config: Config) -> None:
         self._parent = parent
         self._config = config
-        self._saved = False
         self._syncing_controls = False
         self._args_sync_job: str | None = None
         self._device_request = 0
@@ -398,10 +397,6 @@ class _SettingsDialog:
         self._poll_app_results()
 
         self._dialog.wait_window()
-
-    @property
-    def saved(self) -> bool:
-        return self._saved
 
     def _build_ui(self) -> None:
         self._dialog.rowconfigure(0, weight=1)
@@ -1312,11 +1307,9 @@ class _SettingsDialog:
                     parent=self._dialog,
                 )
                 return
-        self._saved = True
         self._destroy_dialog()
 
     def _cancel(self) -> None:
-        self._saved = False
         self._destroy_dialog()
 
     def _destroy_dialog(self) -> None:
