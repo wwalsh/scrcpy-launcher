@@ -72,7 +72,8 @@ the tray icon launches the first session in the list.
 ## Tray controls
 
 - **Left-click:** launch the first configured session.
-- **Right-click:** launch any session, open Settings, or quit.
+- **Right-click:** launch any session, open Settings, check for updates, view
+  About information, or quit.
 - The menu reloads saved configuration each time it opens.
 - While a tray-launched Settings window is open, **Settings** and **Quit** are
   disabled to protect unsaved changes. Close Settings first.
@@ -104,6 +105,10 @@ is preserved. Installed and portable editions use independent configurations.
   **Replace** to restore them. Imported changes are not written until Save.
 - **Windows autostart:** installed builds can start only the tray at sign-in;
   sessions are never launched automatically.
+- **About:** displays the launcher and bundled scrcpy versions, license, and
+  project link in a native Windows dialog.
+- **Check for updates:** manually checks the latest GitHub Release and offers to
+  open its page. It never downloads or installs an update.
 
 Arguments are entered one per line. Quick controls synchronize with their
 corresponding arguments while preserving advanced options. See the
@@ -123,6 +128,7 @@ backups, recovery, and configuration locations.
 | Bundled runtime verification fails | Repair by rerunning the same installer, or reinstall from a release whose checksum you verified. |
 | Configuration cannot be loaded | Use the startup recovery prompt to restore `config.json.bak` or open the configuration folder. |
 | Settings is open and Quit is disabled | Close Settings with Save, Cancel, or `Esc`, then open the tray menu again. |
+| Update check fails | Confirm that GitHub is reachable and try **Check for updates…** again. The failure does not affect saved sessions or launching. |
 
 Rotating diagnostic logs are stored in:
 
@@ -133,6 +139,11 @@ Rotating diagnostic logs are stored in:
 
 Logs mask common Windows profile paths and device serial contexts, but review
 them before sharing because redaction is targeted rather than comprehensive.
+
+The launcher makes no automatic internet requests. Selecting **Check for
+updates…** sends an HTTPS request to GitHub's public Releases API containing the
+launcher version in its user-agent. Configuration, sessions, device identifiers,
+and application inventories are not sent.
 
 ## Uninstall
 

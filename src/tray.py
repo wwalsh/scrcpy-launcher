@@ -8,14 +8,29 @@ import ctypes
 import ctypes.wintypes as w
 import logging
 import subprocess
+import threading
 import win32con
 import win32gui
 
+from .bundled_manifest import BUNDLED_SCRCPY_VERSION
 from .config import Config, ConfigError, Session, load_config
 from .launcher import SessionLaunchError, launch_session
 from .runtime import resource_path, settings_launch_spec
 from .scrcpy_runtime import ScrcpyResolutionError, resolve_scrcpy
-from .winui import show_error
+from .update_check import (
+    LATEST_RELEASE_URL,
+    REPOSITORY_URL,
+    UpdateCheckError,
+    check_latest_release,
+)
+from .version import APP_VERSION
+from .winui import (
+    DialogChoice,
+    ask_yes_no_information,
+    open_url,
+    show_error,
+    show_info,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -160,9 +175,18 @@ def _show_menu(hwnd: int) -> None:
         win32gui.AppendMenu(hmenu, win32con.MF_STRING, i, session.name)
 
     win32gui.AppendMenu(hmenu, win32con.MF_SEPARATOR, 0, "")
+    session_count = len(_state.sessions)
+    settings_id = session_count + 1
+    update_id = session_count + 2
+    about_id = session_count + 3
+    quit_id = session_count + 4
     settings_flags, settings_label, quit_flags, quit_label = _settings_menu_state()
-    win32gui.AppendMenu(hmenu, settings_flags, len(_state.sessions) + 1, settings_label)
-    win32gui.AppendMenu(hmenu, quit_flags, len(_state.sessions) + 2, quit_label)
+    update_flags, update_label = _update_menu_state()
+    win32gui.AppendMenu(hmenu, settings_flags, settings_id, settings_label)
+    win32gui.AppendMenu(hmenu, update_flags, update_id, update_label)
+    win32gui.AppendMenu(hmenu, win32con.MF_STRING, about_id, "About scrcpy-launcher")
+    win32gui.AppendMenu(hmenu, win32con.MF_SEPARATOR, 0, "")
+    win32gui.AppendMenu(hmenu, quit_flags, quit_id, quit_label)
 
     win32gui.SetForegroundWindow(hwnd)
     cmd = win32gui.TrackPopupMenu(
@@ -172,13 +196,19 @@ def _show_menu(hwnd: int) -> None:
     )
     win32gui.DestroyMenu(hmenu)
 
-    if cmd == len(_state.sessions) + 2:
+    if cmd == quit_id:
         if _settings_is_open():
             return
         win32gui.PostQuitMessage(0)
         return
-    elif cmd == len(_state.sessions) + 1:
+    elif cmd == settings_id:
         _spawn_settings_process(str(_state.config_path))
+        return
+    elif cmd == update_id:
+        _start_update_check()
+        return
+    elif cmd == about_id:
+        _show_about()
         return
     elif cmd:
         session = _state.sessions[cmd - 1] if cmd <= len(_state.sessions) else None
@@ -246,6 +276,100 @@ def _settings_menu_state() -> tuple[int, str, int, str]:
     return win32con.MF_STRING, "Settings", win32con.MF_STRING, "Quit"
 
 
+def _update_is_running() -> bool:
+    """Return whether a user-requested update check is still running."""
+    global _update_check_thread
+    if _update_check_thread is None:
+        return False
+    if _update_check_thread.is_alive():
+        return True
+    _update_check_thread = None
+    return False
+
+
+def _update_menu_state() -> tuple[int, str]:
+    if _update_is_running():
+        return (
+            win32con.MF_STRING | win32con.MF_GRAYED,
+            "Check for updates… (in progress)",
+        )
+    return win32con.MF_STRING, "Check for updates…"
+
+
+def _open_project_url(url: str) -> None:
+    if not open_url(url):
+        show_error(
+            "scrcpy-launcher Link Error",
+            f"Windows could not open the project page.\n\n{url}",
+        )
+
+
+def _show_about() -> None:
+    message = (
+        f"scrcpy-launcher {APP_VERSION}\n\n"
+        "Windows system-tray launcher for reusable scrcpy sessions.\n\n"
+        "License: GPL-3.0-only\n"
+        f"Bundled scrcpy: {BUNDLED_SCRCPY_VERSION}\n"
+        "Third-party components retain their original licenses.\n\n"
+        f"Project: {REPOSITORY_URL}\n\n"
+        "Open the project page?"
+    )
+    if (
+        ask_yes_no_information("About scrcpy-launcher", message)
+        is DialogChoice.YES
+    ):
+        _open_project_url(REPOSITORY_URL)
+
+
+def _run_update_check() -> None:
+    global _update_check_thread
+    try:
+        result = check_latest_release(APP_VERSION)
+        if result.update_available:
+            choice = ask_yes_no_information(
+                "scrcpy-launcher Update Available",
+                f"Installed version: {result.current_version}\n"
+                f"Latest version: {result.latest_version}\n\n"
+                "Open the GitHub release page?",
+            )
+            if choice is DialogChoice.YES:
+                _open_project_url(LATEST_RELEASE_URL)
+        else:
+            show_info(
+                "scrcpy-launcher Updates",
+                f"scrcpy-launcher {APP_VERSION} is up to date.\n\n"
+                f"Latest public release: {result.latest_version}",
+            )
+    except UpdateCheckError as exc:
+        logger.warning("Update check failed: %s", exc)
+        show_error(
+            "scrcpy-launcher Update Check Failed",
+            f"Could not check for updates.\n\n{exc}",
+        )
+    except Exception as exc:
+        logger.exception("Unexpected update check failure")
+        show_error(
+            "scrcpy-launcher Update Check Failed",
+            f"Could not check for updates.\n\n{exc}",
+        )
+    finally:
+        _update_check_thread = None
+
+
+def _start_update_check() -> bool:
+    """Start one background update check, returning whether it was started."""
+    global _update_check_thread
+    if _update_is_running():
+        return False
+    _update_check_thread = threading.Thread(
+        target=_run_update_check,
+        name="scrcpy-launcher-update-check",
+        daemon=True,
+    )
+    _update_check_thread.start()
+    return True
+
+
 def _spawn_settings_process(config_path: str) -> bool:
     """Launch one settings UI process, returning whether a process was started."""
     global _settings_process
@@ -286,6 +410,7 @@ def _on_notify(hwnd: int, uid: int, mouse_event: int) -> int:
 # Module-level state
 _state: Config = None  # type: ignore
 _settings_process: subprocess.Popen[bytes] | None = None
+_update_check_thread: threading.Thread | None = None
 
 
 def run_tray(config: Config) -> None:

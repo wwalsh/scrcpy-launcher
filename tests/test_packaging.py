@@ -77,6 +77,7 @@ class PackagingTests(unittest.TestCase):
             "docs/security-model.md",
             "docs/user-guide.md",
             "docs/building.md",
+            "src/update_check.py",
             "SECURITY.md",
             ".github/dependabot.yml",
             ".github/workflows/security-audit.yml",
@@ -235,6 +236,7 @@ class PackagingTests(unittest.TestCase):
             "Session import and export",
             "Configuration and recovery",
             "Updating and uninstalling",
+            "Checking for updates",
         ):
             with self.subTest(text=required_text):
                 self.assertIn(required_text, guide)
@@ -245,6 +247,8 @@ class PackagingTests(unittest.TestCase):
                 self.assertIn(image_name, readme + guide)
         self.assertIn("Machine-generated documentation image", readme)
         self.assertIn("Machine-generated documentation image", guide)
+        self.assertIn("makes no automatic internet requests", readme)
+        self.assertIn("No update check runs automatically", guide)
 
     def test_milestone_does_not_add_scrcpy_or_adb_binaries(self) -> None:
         forbidden_names = {"adb.exe", "scrcpy.exe", "scrcpy-server"}

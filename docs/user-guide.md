@@ -45,6 +45,9 @@ explicit path is supplied. Windows autostart is intentionally unavailable.
 - Right-click opens the current session menu.
 - Right-click reloads the saved configuration before building the menu.
 - Settings and Quit are unavailable while tray-launched Settings is open.
+- **About scrcpy-launcher** displays version, license, bundled-runtime, and
+  project information in a native Windows dialog.
+- **Check for updates…** performs a user-requested GitHub release check.
 - Quit stops only the tray; already-running scrcpy sessions remain independent.
 
 ## Creating a session
@@ -211,6 +214,23 @@ Run key. It starts only scrcpy-launcher and never launches a session. Disabling
 the option removes only a registration that belongs to the current installation.
 
 ## Updating and uninstalling
+
+### Checking for updates
+
+Choose **Check for updates…** from the tray menu. The request runs in the
+background so configured sessions remain available. If a newer stable release
+exists, the launcher can open its GitHub Release page in the default browser.
+
+The update checker never downloads, installs, or executes a release. Download
+the desired installer or portable ZIP yourself and verify its matching SHA-256
+file before use. Network failures are nonfatal and do not change configuration.
+
+No update check runs automatically or at startup. A manual check sends only a
+standard HTTPS request to GitHub's public Releases API, including the launcher
+version in the user-agent. It does not send configuration, session arguments,
+device identifiers, or application inventories.
+
+### Installing updates
 
 Quit the tray before updating. Running a newer installer preserves installed
 configuration. Rerunning the same installer repairs missing application files.

@@ -4,6 +4,23 @@ Use this checklist for every installer/portable release. Test with production
 artifacts from `dist\artifacts`, not the PyInstaller staging directory. Preserve a
 copy of any real configuration before testing.
 
+## v0.7.2 acceptance record
+
+`v0.7.2` adds native About information and a bounded, user-initiated GitHub
+release check. The update checker runs outside the tray message loop and never
+downloads or installs software.
+
+| Check | Result |
+| --- | --- |
+| Automated tests | Passed 2026-08-23: 217 tests |
+| Dependency security policy | Passed 2026-08-23 |
+| Production build and package inventories | Passed 2026-08-23 |
+| Portable archive inventory and isolation | Passed 2026-08-23 |
+| About dialog and project link | Passed 2026-08-23: version, bundled scrcpy, license, and GitHub link verified |
+| Update check responsiveness | Passed 2026-08-23: tray remained responsive and v0.7.1 was reported current |
+| Installer upgrade and configuration preservation | Passed 2026-08-23 |
+| Installed and portable smoke tests | Passed 2026-08-23 |
+
 ## v0.7.1 acceptance record
 
 `v0.7.1` is the security-hardening release. It adds bounded configuration input,

@@ -77,6 +77,7 @@ the native dependency review. It does not query live vulnerability services.
 - `src/launcher.py` starts and monitors scrcpy without a console window.
 - `src/autostart.py` manages the current user's installed-app registration.
 - `src/logging_setup.py` configures rotating, privacy-redacted logs.
+- `src/update_check.py` performs bounded, user-initiated GitHub release checks.
 - `packaging/` contains dependency staging, PyInstaller, NSIS, security-policy,
   cleanup-safety, and release-verification tools.
 
