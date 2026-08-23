@@ -1,0 +1,4 @@
+scrcpy 4.1 <https://github.com/Genymobile/scrcpy>
+[server] INFO: List of apps:
+ - Application Name Longer Than Thirty Characters
+                                com.example.long_application_name

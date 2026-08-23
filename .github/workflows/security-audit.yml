@@ -1,0 +1,40 @@
+name: Dependency security audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 15 * * 1"
+  push:
+    paths:
+      - "requirements*.txt"
+      - "packaging/dependencies/**"
+      - "packaging/security_audit.py"
+      - ".github/workflows/security-audit.yml"
+  pull_request:
+    paths:
+      - "requirements*.txt"
+      - "packaging/dependencies/**"
+      - "packaging/security_audit.py"
+      - ".github/workflows/security-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements-build.txt
+      - name: Validate locked and native dependency policy
+        run: python packaging/security_audit.py
+      - name: Audit locked Python dependencies
+        uses: pypa/gh-action-pip-audit@v1.1.0
+        with:
+          inputs: requirements-build.txt
+          no-deps: true
+          require-hashes: true

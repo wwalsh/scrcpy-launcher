@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# PyInstaller
+build/
+dist/
+.cache/
+*.spec
+!packaging/*.spec
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated configuration backups
+config.json
+config.json.bak
+config.test-backup.json

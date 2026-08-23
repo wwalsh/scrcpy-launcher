@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-08-22",
+  "max_age_days": 45,
+  "components": [
+    {
+      "name": "scrcpy client and server",
+      "version": "4.1",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://github.com/Genymobile/scrcpy/security/advisories",
+        "https://github.com/Genymobile/scrcpy/releases/tag/v4.1"
+      ],
+      "notes": "Version and upstream security/release channels reviewed for the bundled baseline."
+    },
+    {
+      "name": "Android SDK Platform-Tools (ADB)",
+      "version": "37.0.0",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://developer.android.com/tools/releases/platform-tools",
+        "https://android.googlesource.com/platform/packages/modules/adb/"
+      ],
+      "notes": "Bundled version checked against the official Platform-Tools release channel."
+    },
+    {
+      "name": "FFmpeg",
+      "version": "8.1.2",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://ffmpeg.org/security.html",
+        "https://ffmpeg.org/download.html"
+      ],
+      "notes": "Upstream security notices and the exact bundled release require review at each refresh."
+    },
+    {
+      "name": "dav1d",
+      "version": "1.5.3",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://code.videolan.org/videolan/dav1d/-/security",
+        "https://code.videolan.org/videolan/dav1d/-/tags"
+      ],
+      "notes": "Upstream security and release channels reviewed for the bundled baseline."
+    },
+    {
+      "name": "SDL",
+      "version": "3.4.12",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://github.com/libsdl-org/SDL/security/advisories",
+        "https://github.com/libsdl-org/SDL/releases"
+      ],
+      "notes": "Upstream advisories and releases reviewed for the bundled baseline."
+    },
+    {
+      "name": "libusb",
+      "version": "1.0.30",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://github.com/libusb/libusb/security/advisories",
+        "https://github.com/libusb/libusb/releases"
+      ],
+      "notes": "Upstream advisories and releases reviewed for the bundled baseline."
+    },
+    {
+      "name": "zlib",
+      "version": "system build dependency",
+      "status": "reviewed",
+      "advisory_sources": [
+        "https://zlib.net/",
+        "https://github.com/madler/zlib/releases"
+      ],
+      "notes": "Build provenance and upstream releases require review when the scrcpy bundle changes."
+    }
+  ]
+}

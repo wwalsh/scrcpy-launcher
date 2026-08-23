@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "scrcpy_mode": "bundled",
+  "scrcpy_path": "scrcpy.exe",
+  "sessions": [
+    {
+      "name": "Example phone",
+      "args": [
+        "--serial=DEVICE_SERIAL",
+        "--window-title=Example phone"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+# Security policy
+
+## Reporting a vulnerability
+
+Do not publish device serials, user-profile paths, configuration files, or other
+private diagnostics in a public report. If GitHub private vulnerability
+reporting is available for the repository, use it. Otherwise, open a minimal
+issue requesting a private contact channel and omit exploit details until one is
+provided.
+
+Include the affected release, Windows version, reproduction conditions, and the
+security impact. Reports involving bundled runtime tampering should also include
+the displayed verification error and the release artifact's SHA-256 file.
+
+## Dependency monitoring
+
+- Python runtime and build requirements are exact-version, SHA-256 hash locked.
+- A scheduled GitHub Actions job runs `pip-audit` against the locked Python
+  dependency set every week and on relevant changes.
+- Dependabot monitors Python and GitHub Actions dependencies weekly.
+- Native components in the scrcpy bundle are recorded in the bundle manifest.
+  Their explicit advisory review is recorded in
+  `packaging/dependencies/security-review.json`.
+- The native review expires after 45 days. Tests and release builds fail if it
+  is stale, incomplete, marked `update-required`, or does not exactly match the
+  current bundle manifest.
+
+Before a release, resolve audit failures, update vulnerable dependencies where
+practical, record any narrowly justified accepted risk, refresh the native
+review date and notes, and run the complete release build.
+
+## Accepted limitations
+
+The current accepted low-risk limitations and their review triggers are
+documented in [docs/security-model.md](docs/security-model.md). Authenticode
+signing is planned separately and is not represented as an existing control.

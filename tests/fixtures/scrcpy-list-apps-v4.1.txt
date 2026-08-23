@@ -1,0 +1,12 @@
+scrcpy 4.1 <https://github.com/Genymobile/scrcpy>
+INFO: ADB device found:
+INFO:     -->   (usb)  SANITIZED_SERIAL                 device  Android_device
+[server] INFO: Device: [vendor] vendor Android device (Android 15)
+[server] INFO: Processing Android apps... (this may take some time)
+[server] INFO: List of apps:
+ * Calculator                     com.google.android.calculator
+ * Settings                       com.android.settings
+ - Authenticator                  com.azure.authenticator
+ - Authenticator                  com.bitwarden.authenticator
+ - Google Wallet                  com.google.android.apps.walletnfcrel
+ - X-plore                        com.lonelycatgames.Xplore

@@ -1,0 +1,316 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
+"""Build and run the system tray icon with a scrcpy session menu."""
+
+from __future__ import annotations
+
+import ctypes
+import ctypes.wintypes as w
+import logging
+import subprocess
+import win32con
+import win32gui
+
+from .config import Config, ConfigError, Session, load_config
+from .launcher import SessionLaunchError, launch_session
+from .runtime import resource_path, settings_launch_spec
+from .scrcpy_runtime import ScrcpyResolutionError, resolve_scrcpy
+from .winui import show_error
+
+logger = logging.getLogger(__name__)
+
+ICON_PATH = str(resource_path("icon.ico"))
+
+_WINDOW_CLASS = "ScrcpyTrayWindow"
+
+# Win32 constants
+NIM_ADD = 0
+NIM_MODIFY = 1
+NIM_DELETE = 2
+NIF_MESSAGE = 0x00000001
+NIF_ICON = 0x00000002
+NIF_TIP = 0x00000004
+WM_NOTIFY = 0x400 + 11
+WM_RBUTTONUP = 0x0205
+WM_LBUTTONUP = 0x0202
+WM_DESTROY = 0x0002
+
+
+class _GUID(ctypes.Structure):
+    _fields_ = [
+        ("Data1", w.ULONG),
+        ("Data2", w.WORD),
+        ("Data3", w.WORD),
+        ("Data4", w.BYTE * 8),
+    ]
+
+
+class _NOTIFYICONDATAW(ctypes.Structure):
+    class _VERSION_OR_TIMEOUT(ctypes.Union):
+        _fields_ = [
+            ("uTimeout", w.UINT),
+            ("uVersion", w.UINT),
+        ]
+
+    _fields_ = [
+        ("cbSize", w.DWORD),
+        ("hWnd", w.HWND),
+        ("uID", w.UINT),
+        ("uFlags", w.UINT),
+        ("uCallbackMessage", w.UINT),
+        ("hIcon", w.HICON),
+        ("szTip", w.WCHAR * 128),
+        ("dwState", w.DWORD),
+        ("dwStateMask", w.DWORD),
+        ("szInfo", w.WCHAR * 256),
+        ("version_or_timeout", _VERSION_OR_TIMEOUT),
+        ("szInfoTitle", w.WCHAR * 64),
+        ("dwInfoFlags", w.DWORD),
+        ("guidItem", _GUID),
+        ("hBalloonIcon", w.HICON),
+    ]
+    _anonymous_ = ["version_or_timeout"]
+
+
+class _NOTIFYICONIDENTIFIER(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", w.DWORD),
+        ("hWnd", w.HWND),
+        ("uID", w.UINT),
+        ("guidItem", _GUID),
+        ("nlid", w.ULONG * 2),
+        ("reserved", w.ULONG * 2),
+    ]
+
+
+_shell32 = ctypes.windll.shell32
+_user32 = ctypes.windll.user32
+
+
+def _register_window_class() -> int:
+    wc = win32gui.WNDCLASS()
+    wc.hInstance = win32gui.GetModuleHandle(None)
+    wc.lpszClassName = _WINDOW_CLASS
+    wc.style = win32con.CS_VREDRAW | win32con.CS_HREDRAW
+    wc.hCursor = win32gui.LoadCursor(0, win32con.IDC_ARROW)
+    wc.hbrBackground = win32con.COLOR_WINDOW + 1
+    wc.lpfnWndProc = _wnd_proc
+    return win32gui.RegisterClass(wc)
+
+
+def _create_window(class_atom: int) -> int:
+    return win32gui.CreateWindow(
+        class_atom,
+        _WINDOW_CLASS,
+        win32con.WS_POPUP,
+        0, 0, 0, 0,
+        0, 0,
+        win32gui.GetModuleHandle(None),
+        None,
+    )
+
+
+def _show_icon(hwnd: int, title: str, msg_taskbar_created: int, hicon_ref: list) -> None:
+    hicon = _user32.LoadImageW(
+        None,
+        ICON_PATH,
+        win32con.IMAGE_ICON,
+        0, 0,
+        win32con.LR_DEFAULTSIZE | win32con.LR_LOADFROMFILE,
+    )
+    hicon_ref[0] = hicon
+
+    nid = _NOTIFYICONDATAW()
+    nid.cbSize = ctypes.sizeof(_NOTIFYICONDATAW)
+    nid.hWnd = hwnd
+    nid.uID = 0
+    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
+    nid.uCallbackMessage = WM_NOTIFY
+    nid.hIcon = hicon
+    nid.szTip = title
+
+    _shell32.Shell_NotifyIconW(NIM_ADD, ctypes.byref(nid))
+
+
+def _hide_icon(hwnd: int) -> None:
+    nid = _NOTIFYICONDATAW()
+    nid.cbSize = ctypes.sizeof(_NOTIFYICONDATAW)
+    nid.hWnd = hwnd
+    nid.uID = 0
+    _shell32.Shell_NotifyIconW(NIM_DELETE, ctypes.byref(nid))
+
+
+def _show_menu(hwnd: int) -> None:
+    global _state
+    try:
+        _state = load_config(_state.config_path)
+    except ConfigError as exc:
+        logger.exception("Could not reload configuration; retaining last good state")
+        show_error(
+            "scrcpy-launcher Configuration Error",
+            f"Could not reload the configuration:\n\n{exc}\n\n"
+            "The last successfully loaded sessions will remain available.",
+        )
+    else:
+        _log_scrcpy_selection(_state)
+    x, y = win32gui.GetCursorPos()
+    hmenu = win32gui.CreatePopupMenu()
+
+    for i, session in enumerate(_state.sessions, start=1):
+        win32gui.AppendMenu(hmenu, win32con.MF_STRING, i, session.name)
+
+    win32gui.AppendMenu(hmenu, win32con.MF_SEPARATOR, 0, "")
+    settings_flags, settings_label, quit_flags, quit_label = _settings_menu_state()
+    win32gui.AppendMenu(hmenu, settings_flags, len(_state.sessions) + 1, settings_label)
+    win32gui.AppendMenu(hmenu, quit_flags, len(_state.sessions) + 2, quit_label)
+
+    win32gui.SetForegroundWindow(hwnd)
+    cmd = win32gui.TrackPopupMenu(
+        hmenu,
+        win32con.TPM_RIGHTBUTTON | win32con.TPM_RETURNCMD,
+        x, y, 0, hwnd, None,
+    )
+    win32gui.DestroyMenu(hmenu)
+
+    if cmd == len(_state.sessions) + 2:
+        if _settings_is_open():
+            return
+        win32gui.PostQuitMessage(0)
+        return
+    elif cmd == len(_state.sessions) + 1:
+        _spawn_settings_process(str(_state.config_path))
+        return
+    elif cmd:
+        session = _state.sessions[cmd - 1] if cmd <= len(_state.sessions) else None
+        if session:
+            _launch_configured_session(_state, session)
+
+
+def _resolve_configured_scrcpy(config: Config, *, report_error: bool) -> str | None:
+    try:
+        resolution = resolve_scrcpy(config.scrcpy_mode, config.scrcpy_path)
+    except ScrcpyResolutionError as exc:
+        logger.error("Could not resolve configured scrcpy: %s", exc)
+        if report_error:
+            show_error("scrcpy Configuration Error", str(exc))
+        return None
+    logger.info("Using %s", resolution.description)
+    return str(resolution.path)
+
+
+def _log_scrcpy_selection(config: Config) -> None:
+    _resolve_configured_scrcpy(config, report_error=False)
+
+
+def _launch_configured_session(config: Config, session: Session) -> None:
+    scrcpy_path = _resolve_configured_scrcpy(config, report_error=True)
+    if scrcpy_path is not None:
+        _launch_session(scrcpy_path, session)
+
+
+def _launch_session(scrcpy_path: str, session: Session) -> None:
+    def report_process_error(exc: SessionLaunchError) -> None:
+        logger.error("A configured session failed")
+        show_error(
+            "scrcpy Session Failed",
+            f"Session '{session.name}' failed:\n\n{exc}",
+        )
+
+    try:
+        launch_session(scrcpy_path, session.args, report_process_error)
+    except SessionLaunchError as exc:
+        report_process_error(exc)
+
+
+def _launch_first_session(config: Config) -> None:
+    if config.sessions:
+        _launch_configured_session(config, config.sessions[0])
+
+
+def _settings_is_open() -> bool:
+    """Return whether the tray-launched Settings process is still running."""
+    global _settings_process
+    if _settings_process is None:
+        return False
+    if _settings_process.poll() is None:
+        return True
+    _settings_process = None
+    return False
+
+
+def _settings_menu_state() -> tuple[int, str, int, str]:
+    """Return flags and labels for Settings and Quit menu items."""
+    if _settings_is_open():
+        disabled = win32con.MF_STRING | win32con.MF_GRAYED
+        return disabled, "Settings (open)", disabled, "Quit (close Settings first)"
+    return win32con.MF_STRING, "Settings", win32con.MF_STRING, "Quit"
+
+
+def _spawn_settings_process(config_path: str) -> bool:
+    """Launch one settings UI process, returning whether a process was started."""
+    global _settings_process
+    if _settings_is_open():
+        return False
+    launch_spec = settings_launch_spec(config_path)
+    try:
+        _settings_process = subprocess.Popen(
+            launch_spec.command,
+            cwd=launch_spec.cwd,
+        )
+    except OSError as exc:
+        logger.error("Could not launch Settings: %s", exc)
+        show_error("scrcpy-launcher Settings Error", f"Could not launch Settings:\n\n{exc}")
+        _settings_process = None
+        return False
+    return True
+
+
+def _wnd_proc(hwnd: int, msg: int, wparam: int, lparam: int) -> int:
+    global _state
+    if msg == WM_DESTROY:
+        win32gui.PostQuitMessage(0)
+        return 0
+    if msg == WM_NOTIFY:
+        return _on_notify(hwnd, wparam, lparam)
+    return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
+
+
+def _on_notify(hwnd: int, uid: int, mouse_event: int) -> int:
+    if mouse_event == WM_RBUTTONUP:
+        _show_menu(hwnd)
+    elif mouse_event == WM_LBUTTONUP:
+        _launch_first_session(_state)
+    return 0
+
+
+# Module-level state
+_state: Config = None  # type: ignore
+_settings_process: subprocess.Popen[bytes] | None = None
+
+
+def run_tray(config: Config) -> None:
+    """Create a pywin32 tray icon and run the message loop."""
+    global _state
+
+    _state = config
+    _log_scrcpy_selection(config)
+
+    msg_taskbar_created = win32gui.RegisterWindowMessage("TaskbarCreated")
+
+    class_atom = _register_window_class()
+    hwnd = _create_window(class_atom)
+
+    hicon_ref: list[int] = [0]
+    _show_icon(hwnd, config.sessions[0].name if config.sessions else "scrcpy", msg_taskbar_created, hicon_ref)
+
+    try:
+        win32gui.PumpMessages()
+    finally:
+        if hicon_ref[0]:
+            win32gui.DestroyIcon(hicon_ref[0])
+        _hide_icon(hwnd)
+        try:
+            win32gui.DestroyWindow(hwnd)
+        except Exception:
+            pass
+        win32gui.UnregisterClass(_WINDOW_CLASS, win32gui.GetModuleHandle(None))

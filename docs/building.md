@@ -1,0 +1,166 @@
+# Building and testing scrcpy-launcher
+
+This document is for source development and release packaging. Installed and
+portable users should start with the [README](../README.md).
+
+## Development requirements
+
+- Windows 11
+- Python 3.10 or newer
+- NSIS 3 for installer builds
+- Network access for the first bundled-dependency staging run, or a populated
+  offline dependency cache
+
+## Source setup
+
+From PowerShell in the repository:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --require-hashes -r requirements.txt
+Copy-Item .\config.example.json .\config.json
+```
+
+The personal `config.json` is ignored by Git. To use a development scrcpy copy,
+change the example to custom mode and set `scrcpy_path` to `scrcpy.exe`.
+
+Start the tray:
+
+```powershell
+python -m src.main
+```
+
+Explicit configuration paths are also supported:
+
+```powershell
+python -m src.main --config "C:\path\to\config.json"
+```
+
+Run Settings without the tray:
+
+```powershell
+python -m src.settings_main config.json
+```
+
+## Tests
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+The test suite covers configuration limits and recovery, session transfer,
+device and application parsing, tray/settings lifecycle, runtime integrity,
+logging redaction, dependency policy, packaging, and release verification.
+
+Run the deterministic dependency-policy gate separately with:
+
+```powershell
+python packaging\security_audit.py
+```
+
+This validates exact Python locks and the freshness and manifest alignment of
+the native dependency review. It does not query live vulnerability services.
+
+## Architecture
+
+- `src/main.py` handles invocation, logging, single-instance ownership, startup
+  recovery, and tray startup.
+- `src/tray.py` owns the native Win32 tray and starts Settings separately.
+- `src/settings_main.py` and `src/settings.py` own the tkinter Settings process.
+- `src/config.py`, `src/config_recovery.py`, and `src/session_transfer.py` handle
+  bounded, validated, atomic configuration operations.
+- `src/scrcpy_runtime.py` resolves custom/bundled runtimes and verifies the
+  bundled inventory once per process.
+- `src/devices.py` and `src/device_apps.py` provide background device
+  and application discovery.
+- `src/launcher.py` starts and monitors scrcpy without a console window.
+- `src/autostart.py` manages the current user's installed-app registration.
+- `src/logging_setup.py` configures rotating, privacy-redacted logs.
+- `packaging/` contains dependency staging, PyInstaller, NSIS, security-policy,
+  cleanup-safety, and release-verification tools.
+
+## Build dependencies
+
+Install the complete exact-version, hash-locked build set:
+
+```powershell
+python -m pip install --require-hashes -r requirements-build.txt
+```
+
+NSIS may be installed normally or through PortableApps. The build searches
+`NSIS_HOME`, `PATH`, the current user's standard PortableApps location, and the
+standard Program Files locations. An explicit compiler can be supplied.
+
+## Release build
+
+```powershell
+.\packaging\build.ps1
+```
+
+Or select NSIS explicitly:
+
+```powershell
+.\packaging\build.ps1 `
+  -NsisCompiler "C:\path\to\makensis.exe"
+```
+
+The build:
+
+1. validates dependency policy;
+2. runs the automated tests;
+3. creates the PyInstaller one-folder application;
+4. acquires and verifies the pinned scrcpy bundle and source artifacts;
+5. runs the packaged smoke test;
+6. creates portable and NSIS packages;
+7. verifies package inventories and installed/portable isolation; and
+8. writes SHA-256 files under `dist\artifacts`.
+
+Downloads are cached under `.cache\dependencies`. Use an alternate or offline
+cache with:
+
+```powershell
+.\packaging\build.ps1 `
+  -DependencyCache "D:\build-cache" `
+  -OfflineDependencies
+```
+
+Build only the portable package when NSIS is unavailable:
+
+```powershell
+.\packaging\build.ps1 -SkipInstaller
+```
+
+Create a developer-only unbundled package with:
+
+```powershell
+.\packaging\build.ps1 -SkipInstaller -SkipBundledTools
+```
+
+An unbundled package is explicitly named `unbundled` and is not a release.
+
+## Dependency monitoring
+
+Python and GitHub Actions monitoring files are present under `.github/`.
+Scheduled GitHub Actions and Dependabot provide hosted monitoring. In addition:
+
+- run `python packaging\security_audit.py` before every release;
+- review the upstream advisory sources in
+  `packaging/dependencies/security-review.json`;
+- refresh that review within its 45-day window; and
+- use the scheduled `pip-audit` workflow for live Python vulnerability queries.
+
+The release build fails when the native review is stale, incomplete, marked
+`update-required`, or no longer exactly matches the bundle manifest.
+
+## Release checklist
+
+- Update `src/version.py` and the NSIS fallback version.
+- Refresh dependency review records when required.
+- Run the complete build.
+- Follow [windows-lifecycle-test.md](windows-lifecycle-test.md).
+- Confirm the installer and portable hashes.
+- Inspect the working tree for personal configuration and generated reports.
+- Create the release commit and annotated tag only after acceptance.
+
+Authenticode signing is not currently part of the release process.
