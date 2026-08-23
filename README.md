@@ -3,7 +3,11 @@ Project website: https://scrcpy-launcher.link/
 # scrcpy-launcher
 
 scrcpy-launcher is a Windows 11 system-tray application for saving and launching
-reusable [scrcpy](https://github.com/Genymobile/scrcpy) sessions. A session is a
+reusable [scrcpy](https://github.com/Genymobile/scrcpy) sessions. scrcpy is a free, open-source application that mirrors and lets you control an
+Android device from Windows over USB using ADB. scrcpy-launcher saves the
+scrcpy command-line options you use for each device or workflow.
+
+A session is a
 named set of scrcpy command-line options for a particular device, application,
 window layout, or use case.
 
