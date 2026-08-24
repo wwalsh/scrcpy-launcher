@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from .paths import portableapps_data_dir
 from .runtime import is_frozen
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,10 @@ class AutostartManager:
 
 def create_autostart_manager(config_path: Path | str) -> AutostartManager:
     """Create an installed-app manager; source-mode registration is intentionally unsupported."""
+    if portableapps_data_dir() is not None:
+        raise AutostartUnavailableError(
+            "Windows autostart is unavailable in the PortableApps.com edition"
+        )
     if not is_frozen():
         raise AutostartUnavailableError(
             "Windows autostart is available only in the installed application"

@@ -12,6 +12,8 @@ import tempfile
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from .paths import portableapps_data_dir
+
 
 _USER_PROFILE_PATTERN = re.compile(
     r"(?i)\b[A-Z]:[\\/]Users[\\/][^\\/\s\"']+"
@@ -41,6 +43,9 @@ class PrivacyFormatter(logging.Formatter):
 
 def log_path_for(component: str) -> Path:
     """Return the preferred per-component log path."""
+    portableapps_data = portableapps_data_dir()
+    if portableapps_data is not None:
+        return portableapps_data / "logs" / f"{component}.log"
     local_app_data = os.environ.get("LOCALAPPDATA")
     base = Path(local_app_data) if local_app_data else Path(tempfile.gettempdir())
     return base / "scrcpy-launcher" / f"{component}.log"
@@ -61,18 +66,19 @@ def setup_logging(component: str) -> Path:
             )
         )
     except OSError:
-        log_path = Path(tempfile.gettempdir()) / f"scrcpy-launcher-{component}.log"
-        try:
-            handlers.append(
-                RotatingFileHandler(
-                    log_path,
-                    maxBytes=1_000_000,
-                    backupCount=3,
-                    encoding="utf-8",
+        if portableapps_data_dir() is None:
+            log_path = Path(tempfile.gettempdir()) / f"scrcpy-launcher-{component}.log"
+            try:
+                handlers.append(
+                    RotatingFileHandler(
+                        log_path,
+                        maxBytes=1_000_000,
+                        backupCount=3,
+                        encoding="utf-8",
+                    )
                 )
-            )
-        except OSError:
-            pass
+            except OSError:
+                pass
 
     if sys.stderr is not None:
         handlers.append(logging.StreamHandler())

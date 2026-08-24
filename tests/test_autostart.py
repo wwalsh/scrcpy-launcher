@@ -18,6 +18,7 @@ from src.autostart import (
     _write_registration,
     create_autostart_manager,
 )
+from src.paths import PORTABLEAPPS_DATA_ENV
 
 
 class AutostartTests(unittest.TestCase):
@@ -66,6 +67,18 @@ class AutostartTests(unittest.TestCase):
     def test_source_mode_is_unavailable(self, _frozen) -> None:
         with self.assertRaises(AutostartUnavailableError):
             create_autostart_manager("config.json")
+
+    @patch("src.autostart.is_frozen", return_value=True)
+    @patch("src.paths.sys.frozen", True, create=True)
+    def test_portableapps_mode_is_unavailable(self, _frozen) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            "os.environ", {PORTABLEAPPS_DATA_ENV: directory}
+        ):
+            with self.assertRaisesRegex(
+                AutostartUnavailableError,
+                "PortableApps.com edition",
+            ):
+                create_autostart_manager(Path(directory) / "config.json")
 
     @patch("src.autostart.winreg.OpenKey", side_effect=FileNotFoundError)
     def test_missing_registry_value_reads_as_disabled(self, _open_key) -> None:

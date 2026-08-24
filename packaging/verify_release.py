@@ -190,11 +190,21 @@ def verify_installer(installer_path: Path) -> None:
         raise ReleaseVerificationError(f"Installer is not a valid Windows executable: {installer_path}")
 
 
+def verify_portableapps_installer(installer_path: Path) -> None:
+    """Check the official PortableApps installer artifact identity and executable header."""
+    if not installer_path.name.endswith(".paf.exe"):
+        raise ReleaseVerificationError(
+            f"PortableApps installer must end in .paf.exe: {installer_path}"
+        )
+    verify_installer(installer_path)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--package-dir", type=Path, required=True)
     parser.add_argument("--portable-archive", type=Path, required=True)
     parser.add_argument("--installer", type=Path)
+    parser.add_argument("--portableapps-installer", type=Path)
     parser.add_argument("--allow-missing-bundled-tools", action="store_true")
     return parser.parse_args()
 
@@ -211,6 +221,8 @@ def main() -> int:
         )
         if args.installer is not None:
             verify_installer(args.installer)
+        if args.portableapps_installer is not None:
+            verify_portableapps_installer(args.portableapps_installer)
     except ReleaseVerificationError as exc:
         print(f"Release verification failed: {exc}")
         return 1

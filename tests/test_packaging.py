@@ -71,6 +71,10 @@ class PackagingTests(unittest.TestCase):
             "packaging/build.ps1",
             "packaging/stage_scrcpy.py",
             "packaging/verify_release.py",
+            "packaging/verify_portableapps.py",
+            "packaging/build_portableapps_launcher.ps1",
+            "packaging/portableapps/App/AppInfo/appinfo.ini",
+            "packaging/portableapps/App/AppInfo/Launcher/scrcpy-launcherPortable.ini",
             "packaging/dependencies/scrcpy-win64-v4.1.json",
             "packaging/generate_version_info.py",
             "docs/windows-lifecycle-test.md",
@@ -104,6 +108,8 @@ class PackagingTests(unittest.TestCase):
                 PROJECT_ROOT / "packaging" / "stage_scrcpy.py",
                 PROJECT_ROOT / "packaging" / "generate_version_info.py",
                 PROJECT_ROOT / "packaging" / "verify_release.py",
+                PROJECT_ROOT / "packaging" / "verify_portableapps.py",
+                PROJECT_ROOT / "packaging" / "build_portableapps_launcher.ps1",
                 PROJECT_ROOT / "packaging" / "scrcpy-launcher.nsi",
                 PROJECT_ROOT / "packaging" / "scrcpy-launcher.spec",
             )
@@ -290,6 +296,9 @@ class PackagingTests(unittest.TestCase):
         self.assertIn('"default-config.json"', build_script)
         self.assertIn("$portableStageParent", build_script)
         self.assertIn('"packaging\\verify_release.py"', build_script)
+        self.assertIn('"--portableapps-installer"', build_script)
+        self.assertIn("CreateInstaller = $true", build_script)
+        self.assertIn("$SkipPortableApps", build_script)
         verification_position = build_script.index('"packaging\\verify_release.py"')
         hash_position = build_script.index("Get-FileHash")
         self.assertLess(archive_position, verification_position)

@@ -44,6 +44,19 @@ class CliTests(unittest.TestCase):
         self.assertIs(unbundled.mode, LaunchMode.PACKAGE_SMOKE_TEST)
         self.assertTrue(unbundled.allow_missing_bundled_tools)
 
+    def test_portableapps_smoke_mode_requires_launcher_config_argument(self) -> None:
+        invocation = parse_invocation(
+            ["--config", "X:/PortableApps/App/Data/config.json", "--portableapps-smoke-test"]
+        )
+
+        self.assertIs(invocation.mode, LaunchMode.PORTABLEAPPS_SMOKE_TEST)
+        self.assertEqual(
+            invocation.config_path,
+            "X:/PortableApps/App/Data/config.json",
+        )
+        with self.assertRaises(InvocationError):
+            parse_invocation(["--portableapps-smoke-test"])
+
 
 if __name__ == "__main__":
     unittest.main()
