@@ -46,6 +46,7 @@ explicit path is supplied. Windows autostart is intentionally unavailable.
 - Left-click launches the first session.
 - Right-click opens the current session menu.
 - Right-click reloads the saved configuration before building the menu.
+- The icon restores itself automatically if Windows Explorer restarts.
 - Settings and Quit are unavailable while tray-launched Settings is open.
 - **About scrcpy-launcher** displays version, license, bundled-runtime, and
   project information in a native Windows dialog.

@@ -81,6 +81,7 @@ the tray icon launches the first session in the list.
 - **Right-click:** launch any session, open Settings, check for updates, view
   About information, or quit.
 - The menu reloads saved configuration each time it opens.
+- The tray icon restores itself automatically after Windows Explorer restarts.
 - While a tray-launched Settings window is open, **Settings** and **Quit** are
   disabled to protect unsaved changes. Close Settings first.
 
@@ -125,7 +126,7 @@ backups, recovery, and configuration locations.
 
 | Symptom | What to do |
 | --- | --- |
-| No tray icon | Check Windows' hidden-icons menu. If another launcher instance is running, quit it before starting a new one. |
+| No tray icon | Check Windows' hidden-icons menu. The icon should return automatically after Windows Explorer restarts. If another launcher instance is running, quit it before starting a new one. |
 | Device not listed | Unlock it, use a data-capable cable, enable USB debugging, accept the authorization prompt, then click **Refresh**. |
 | Device is unauthorized | Accept the prompt on Android. If no prompt appears, revoke USB-debugging authorizations on the device, reconnect, and try again. |
 | Device is offline | Disconnect and reconnect it, then refresh. Restarting the device or ADB may be necessary. |

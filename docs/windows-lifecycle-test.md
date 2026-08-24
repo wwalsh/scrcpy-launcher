@@ -74,6 +74,7 @@ are obvious. Quit the tray before running Setup or Uninstall.
 | Portable first run | Extract the ZIP into a new folder and launch it | Adjacent `config.json` is created in bundled mode; AppData config is untouched |
 | Portable upgrade | Edit adjacent `config.json`, then extract a newer ZIP over the folder | Adjacent config is byte-for-byte unchanged and the new application launches |
 | Side-by-side | Run installed and portable editions separately | Installed edition uses AppData; portable edition uses only its adjacent config |
+| Explorer restart | With the tray running, restart **Windows Explorer** twice from Task Manager | The icon returns once after each restart; its menu, Settings, and Quit remain responsive |
 
 ## Location checks
 

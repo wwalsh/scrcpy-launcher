@@ -108,16 +108,19 @@ def _create_window(class_atom: int) -> int:
     )
 
 
-def _show_icon(hwnd: int, title: str, msg_taskbar_created: int, hicon_ref: list) -> None:
-    hicon = _user32.LoadImageW(
+def _load_icon() -> int:
+    """Load and return the tray icon handle."""
+    return _user32.LoadImageW(
         None,
         ICON_PATH,
         win32con.IMAGE_ICON,
         0, 0,
         win32con.LR_DEFAULTSIZE | win32con.LR_LOADFROMFILE,
     )
-    hicon_ref[0] = hicon
 
+
+def _add_icon(hwnd: int, title: str, hicon: int) -> bool:
+    """Register an already-loaded icon with the current Explorer shell."""
     nid = _NOTIFYICONDATAW()
     nid.cbSize = ctypes.sizeof(_NOTIFYICONDATAW)
     nid.hWnd = hwnd
@@ -127,7 +130,7 @@ def _show_icon(hwnd: int, title: str, msg_taskbar_created: int, hicon_ref: list)
     nid.hIcon = hicon
     nid.szTip = title
 
-    _shell32.Shell_NotifyIconW(NIM_ADD, ctypes.byref(nid))
+    return bool(_shell32.Shell_NotifyIconW(NIM_ADD, ctypes.byref(nid)))
 
 
 def _hide_icon(hwnd: int) -> None:
@@ -136,6 +139,23 @@ def _hide_icon(hwnd: int) -> None:
     nid.hWnd = hwnd
     nid.uID = 0
     _shell32.Shell_NotifyIconW(NIM_DELETE, ctypes.byref(nid))
+
+
+def _restore_icon(hwnd: int) -> bool:
+    """Restore the tray icon after Windows Explorer recreates its taskbar."""
+    if not _tray_icon_handle:
+        logger.warning("Cannot restore tray icon because no icon handle is loaded")
+        return False
+    try:
+        restored = _add_icon(hwnd, _tray_title, _tray_icon_handle)
+    except Exception:
+        logger.exception("Could not restore tray icon after Explorer restart")
+        return False
+    if restored:
+        logger.info("Restored tray icon after Explorer restart")
+    else:
+        logger.error("Explorer rejected tray icon restoration")
+    return restored
 
 
 def _show_menu(hwnd: int) -> None:
@@ -376,6 +396,9 @@ def _spawn_settings_process(config_path: str) -> bool:
 
 def _wnd_proc(hwnd: int, msg: int, wparam: int, lparam: int) -> int:
     global _state
+    if _taskbar_created_message is not None and msg == _taskbar_created_message:
+        _restore_icon(hwnd)
+        return 0
     if msg == WM_DESTROY:
         win32gui.PostQuitMessage(0)
         return 0
@@ -396,31 +419,50 @@ def _on_notify(hwnd: int, uid: int, mouse_event: int) -> int:
 _state: Config = None  # type: ignore
 _settings_process: subprocess.Popen[bytes] | None = None
 _update_check_thread: threading.Thread | None = None
+_taskbar_created_message: int | None = None
+_tray_title = ""
+_tray_icon_handle = 0
 
 
 def run_tray(config: Config) -> None:
     """Create a pywin32 tray icon and run the message loop."""
-    global _state
+    global _state, _taskbar_created_message, _tray_title, _tray_icon_handle
 
     _state = config
     _log_scrcpy_selection(config)
 
-    msg_taskbar_created = win32gui.RegisterWindowMessage("TaskbarCreated")
-
-    class_atom = _register_window_class()
-    hwnd = _create_window(class_atom)
-
-    hicon_ref: list[int] = [0]
-    _show_icon(hwnd, config.sessions[0].name if config.sessions else "scrcpy", msg_taskbar_created, hicon_ref)
-
+    class_atom = 0
+    hwnd = 0
     try:
+        _taskbar_created_message = win32gui.RegisterWindowMessage("TaskbarCreated")
+        _tray_title = config.sessions[0].name if config.sessions else "scrcpy"
+        class_atom = _register_window_class()
+        hwnd = _create_window(class_atom)
+        _tray_icon_handle = _load_icon()
+        if not _add_icon(hwnd, _tray_title, _tray_icon_handle):
+            logger.error("Explorer rejected the initial tray icon registration")
         win32gui.PumpMessages()
     finally:
-        if hicon_ref[0]:
-            win32gui.DestroyIcon(hicon_ref[0])
-        _hide_icon(hwnd)
-        try:
-            win32gui.DestroyWindow(hwnd)
-        except Exception:
-            pass
-        win32gui.UnregisterClass(_WINDOW_CLASS, win32gui.GetModuleHandle(None))
+        if hwnd:
+            try:
+                _hide_icon(hwnd)
+            except Exception:
+                logger.exception("Could not remove tray icon during shutdown")
+        if _tray_icon_handle:
+            try:
+                win32gui.DestroyIcon(_tray_icon_handle)
+            except Exception:
+                logger.exception("Could not destroy tray icon handle during shutdown")
+        if hwnd:
+            try:
+                win32gui.DestroyWindow(hwnd)
+            except Exception:
+                pass
+        if class_atom:
+            try:
+                win32gui.UnregisterClass(_WINDOW_CLASS, win32gui.GetModuleHandle(None))
+            except Exception:
+                logger.exception("Could not unregister tray window class during shutdown")
+        _taskbar_created_message = None
+        _tray_title = ""
+        _tray_icon_handle = 0
