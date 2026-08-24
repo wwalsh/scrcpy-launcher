@@ -161,6 +161,14 @@ Open **Windows Settings > Apps > Installed apps**, find **scrcpy-launcher**, and
 backups, recovery archives, and logs. Choose **No** to retain them for a future
 installation. Silent uninstall preserves user data.
 
+## Code signing
+
+scrcpy-launcher is preparing an application to the SignPath Foundation open-source code-signing program. Existing releases are not currently Authenticode signed.
+
+**Free code signing provided by SignPath.io, certificate by SignPath Foundation.**
+
+See the [code signing policy](docs/code-signing-policy.md) for eligible artifacts, trusted-build requirements, signing approval, third-party component handling, privacy, and incident response.
+
 ## Documentation
 
 - [User guide](docs/user-guide.md)
