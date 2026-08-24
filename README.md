@@ -183,7 +183,7 @@ therefore provides a public, reviewable source-to-binary provenance path, while
 not claiming byte-for-byte reproducibility across independent build
 environments.
 
-## Code signing
+## Code signing policy
 
 scrcpy-launcher is preparing an application to the SignPath Foundation open-source code-signing program. Existing releases are not currently Authenticode signed.
 
