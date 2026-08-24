@@ -4,6 +4,24 @@ Use this checklist for every installer/portable release. Test with production
 artifacts from `dist\artifacts`, not the PyInstaller staging directory. Preserve a
 copy of any real configuration before testing.
 
+## v0.7.3 acceptance record
+
+`v0.7.3` completes the Milestone 8 maintenance phase. It removes obsolete UI
+and tray scaffolding, separates focused Settings dialogs, defers optional
+startup imports, limits device and application polling to active discovery, and
+restores the tray icon automatically after Windows Explorer restarts.
+
+| Check | Result |
+| --- | --- |
+| Automated tests | Passed 2026-08-23: 230 tests |
+| Dependency security policy | Passed 2026-08-23 |
+| Production build and package inventories | Passed 2026-08-23 |
+| Portable archive inventory and isolation | Passed 2026-08-23 |
+| Installer upgrade and configuration preservation | Passed 2026-08-23 |
+| Installed and portable smoke tests | Passed 2026-08-23 |
+| Settings and session workflow regression | Passed 2026-08-23 |
+| Explorer restart recovery | Passed 2026-08-23: icon and menu recovered after two Explorer restarts |
+
 ## v0.7.2 acceptance record
 
 `v0.7.2` adds native About information and a bounded, user-initiated GitHub

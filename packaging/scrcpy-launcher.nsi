@@ -1,10 +1,10 @@
 ; SPDX-License-Identifier: GPL-3.0-only
 
 !ifndef AppVersion
-  !define AppVersion "0.7.2"
+  !define AppVersion "0.7.3"
 !endif
 !ifndef AppVersionQuad
-  !define AppVersionQuad "0.7.2.0"
+  !define AppVersionQuad "0.7.3.0"
 !endif
 !ifndef SourceDir
   !define SourceDir "..\dist\scrcpy-launcher"

@@ -2,4 +2,4 @@
 
 """Application version shared by runtime and packaging."""
 
-APP_VERSION = "0.7.2"
+APP_VERSION = "0.7.3"
