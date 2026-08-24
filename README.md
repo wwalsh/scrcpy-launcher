@@ -189,6 +189,10 @@ scrcpy-launcher is preparing an application to the SignPath Foundation open-sour
 
 **Free code signing provided by SignPath.io, certificate by SignPath Foundation.**
 
+The project is currently maintained by **William Walsh (`@wwalsh`)**, who acts as the current committer, reviewer, and signing approver. External contributions require maintainer review before inclusion in an official release, and repository/signing administration accounts must use multi-factor authentication.
+
+scrcpy-launcher does not collect telemetry or automatically send configuration, session, device, or application-inventory data to the maintainer. The only built-in Internet request is the user-initiated **Check for updates** action described above.
+
 See the [code signing policy](docs/code-signing-policy.md) for eligible artifacts, trusted-build requirements, signing approval, third-party component handling, privacy, and incident response.
 
 ## Documentation
@@ -198,6 +202,7 @@ See the [code signing policy](docs/code-signing-policy.md) for eligible artifact
 - [Windows release lifecycle test](docs/windows-lifecycle-test.md)
 - [Security policy](SECURITY.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
+- [Contributing](CONTRIBUTING.md)
 - [Security model and accepted risks](docs/security-model.md)
 - [Third-party notices](THIRD-PARTY-NOTICES.md)
 
