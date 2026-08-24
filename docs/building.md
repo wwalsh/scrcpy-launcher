@@ -156,7 +156,8 @@ The release build fails when the native review is stale, incomplete, marked
 
 ## Release checklist
 
-- Update `src/version.py` and the NSIS fallback version.
+- Update `src/version.py`, the NSIS fallback version, and the visible website
+  release version.
 - Refresh dependency review records when required.
 - Run the complete build.
 - Follow [windows-lifecycle-test.md](windows-lifecycle-test.md).
