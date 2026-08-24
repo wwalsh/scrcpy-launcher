@@ -175,6 +175,7 @@ See the [code signing policy](docs/code-signing-policy.md) for eligible artifact
 - [Building and testing](docs/building.md)
 - [Windows release lifecycle test](docs/windows-lifecycle-test.md)
 - [Security policy](SECURITY.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
 - [Security model and accepted risks](docs/security-model.md)
 - [Third-party notices](THIRD-PARTY-NOTICES.md)
 
