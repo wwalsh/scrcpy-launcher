@@ -71,7 +71,7 @@ class ScrcpyRuntimeTests(unittest.TestCase):
             ):
                 result = resolve_scrcpy(SCRCPY_MODE_BUNDLED, "ignored.exe", root=root)
 
-            self.assertEqual(result.path, executable)
+            self.assertEqual(result.path, executable.resolve())
             self.assertEqual(result.mode, SCRCPY_MODE_BUNDLED)
 
     def test_missing_bundled_executable_does_not_fall_back_to_path(self) -> None:
@@ -114,7 +114,8 @@ class ScrcpyRuntimeTests(unittest.TestCase):
                 "src.scrcpy_runtime.BUNDLED_FILE_HASHES", inventory, clear=True
             ):
                 self.assertEqual(
-                    validate_bundled_installation(root=root), bundle / "scrcpy.exe"
+                    validate_bundled_installation(root=root),
+                    (bundle / "scrcpy.exe").resolve(),
                 )
                 (bundle / "runtime.dll").write_bytes(b"tampered")
                 with self.assertRaisesRegex(ScrcpyResolutionError, "failed verification"):
