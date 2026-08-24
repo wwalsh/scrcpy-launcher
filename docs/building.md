@@ -180,6 +180,10 @@ byte-for-byte reproducible builds across independent environments.
 - Inspect the working tree for personal configuration and generated reports.
 - Use the matching changelog entry as the basis for reviewed GitHub release
   notes.
+- Include a **Code signing policy** link in GitHub release notes. Until SignPath
+  approval and integration are complete, state clearly that the release is
+  unsigned. After signing is enabled, identify the signed artifacts accurately
+  and link to [docs/code-signing-policy.md](code-signing-policy.md).
 - Create the release commit and annotated tag only after acceptance.
 
 Authenticode signing is not currently part of the release process.
