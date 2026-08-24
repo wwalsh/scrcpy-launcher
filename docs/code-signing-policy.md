@@ -134,6 +134,30 @@ be established are not eligible for production signing.
 A signed artifact must not be replaced after signing with a locally rebuilt or
 otherwise different file.
 
+## Distribution provenance
+
+Official distributions must be traceable to the public project repository and a
+specific source revision.
+
+The project's public GitHub Actions build-validation workflow uses the same
+version-controlled `packaging/build.ps1` release build path used for manual
+release builds. For each workflow run, GitHub records the repository, source
+commit, workflow definition, runner environment, logs, and produced build
+artifacts.
+
+The build process uses exact-version, SHA-256 hash-locked Python dependencies,
+a pinned manifest for bundled scrcpy/ADB artifacts, automated tests, dependency
+policy checks, packaged smoke tests, release inventory verification, and
+SHA-256 generation for produced artifacts.
+
+These controls make the build process repeatable, reviewable, and resistant to
+unreviewed dependency or packaging changes. The project does **not** currently
+claim that independent builds are guaranteed to be byte-for-byte identical.
+
+Production signing, once enabled, must only accept artifacts whose source
+revision and trusted build provenance can be established according to the
+SignPath configuration.
+
 ## Release integrity
 
 The source commit, application version, release tag, and release artifact
