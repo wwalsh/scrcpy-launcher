@@ -3,9 +3,14 @@
 ## Reporting a vulnerability
 
 Do not publish device serials, user-profile paths, configuration files, or other
-private diagnostics in a public report. If GitHub private vulnerability
-reporting is available for the repository, use it. Otherwise, open a minimal
-issue requesting a private contact channel and omit exploit details until one is
+private diagnostics in a public report.
+
+Use GitHub's private vulnerability reporting for this repository:
+
+https://github.com/wwalsh/scrcpy-launcher/security/advisories/new
+
+If private vulnerability reporting cannot be used, open a minimal public issue
+requesting a private contact channel and omit exploit details until one is
 provided.
 
 Include the affected release, Windows version, reproduction conditions, and the
