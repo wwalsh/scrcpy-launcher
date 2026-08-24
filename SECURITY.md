@@ -29,8 +29,13 @@ Before a release, resolve audit failures, update vulnerable dependencies where
 practical, record any narrowly justified accepted risk, refresh the native
 review date and notes, and run the complete release build.
 
+## Code signing
+
+scrcpy-launcher is preparing an application to the SignPath Foundation open-source code-signing program. Existing releases are not currently Authenticode signed, so signing is not represented as an existing control.
+
+The project's signing scope, trusted-build requirements, approver role, third-party binary handling, and signing incident process are documented in [docs/code-signing-policy.md](docs/code-signing-policy.md).
+
 ## Accepted limitations
 
 The current accepted low-risk limitations and their review triggers are
-documented in [docs/security-model.md](docs/security-model.md). Authenticode
-signing is planned separately and is not represented as an existing control.
+documented in [docs/security-model.md](docs/security-model.md).
