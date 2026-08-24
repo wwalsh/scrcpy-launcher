@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 from src.device_apps import DeviceApp
 from src.devices import Device
+from src.settings_app_selector import _AppSelectionDialog
 from src.settings import (
-    _AppSelectionDialog,
     _SettingsDialog,
     _app_cache_key,
     _selected_start_app_value,

@@ -9,10 +9,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from src.config import Config
-from src.settings import (
+from src.settings import _SettingsDialog
+from src.settings_import import (
     IMPORT_MODE_MERGE,
     IMPORT_MODE_REPLACE,
-    _SettingsDialog,
     _import_summary_text,
 )
 from src.session_transfer import SESSION_BACKUP_FORMAT, SESSION_BACKUP_VERSION

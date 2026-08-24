@@ -10,10 +10,10 @@ from src.config import SCRCPY_MODE_BUNDLED, SCRCPY_MODE_CUSTOM
 from src.scrcpy_runtime import ScrcpyResolution
 from src.device_apps import DeviceApp
 from src.devices import Device
+from src.settings_app_selector import _filter_device_apps
 from src.settings import (
     _connected_serial_for_selection,
     _detect_devices_for_selection,
-    _filter_device_apps,
     _is_current_app_result,
 )
 
