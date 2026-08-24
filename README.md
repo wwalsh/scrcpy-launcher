@@ -170,6 +170,19 @@ Open **Windows Settings > Apps > Installed apps**, find **scrcpy-launcher**, and
 backups, recovery archives, and logs. Choose **No** to retain them for a future
 installation. Silent uninstall preserves user data.
 
+## Build provenance
+
+The repository includes a public Windows GitHub Actions build-validation
+workflow. It builds from the checked-out source revision using the project's
+version-controlled build script, exact hash-locked Python dependencies, pinned
+bundled-component manifests, automated tests, release verification, and
+SHA-256 artifact generation.
+
+Each CI artifact is associated with the Git commit that produced it. The project
+therefore provides a public, reviewable source-to-binary provenance path, while
+not claiming byte-for-byte reproducibility across independent build
+environments.
+
 ## Code signing
 
 scrcpy-launcher is preparing an application to the SignPath Foundation open-source code-signing program. Existing releases are not currently Authenticode signed.
