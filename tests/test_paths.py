@@ -59,7 +59,7 @@ class PathTests(unittest.TestCase):
 
             result = resolve_config_path(frozen=True, executable=executable)
 
-            self.assertEqual(result, root / "config.json")
+            self.assertEqual(result, (root / "config.json").resolve())
 
     def test_portable_first_run_seeds_once_without_overwriting(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
