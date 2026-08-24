@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import queue
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from src.device_apps import DeviceApp
 from src.devices import Device
@@ -34,8 +34,11 @@ def _settings_shell() -> _SettingsDialog:
     dialog._device_loading = False
     dialog._app_request = 0
     dialog._app_loading = False
+    dialog._app_poll_job = None
     dialog._app_cache = {}
     dialog._app_results = queue.Queue()
+    dialog._device_poll_job = None
+    dialog._device_results = queue.Queue()
     dialog._select_app_button = MagicMock()
     dialog._refresh_apps_button = MagicMock()
     dialog._app_status_var = MagicMock()
@@ -213,17 +216,21 @@ class SettingsAppBrowserTests(unittest.TestCase):
     @patch("src.settings._AppSelectionDialog")
     def test_successful_refresh_replaces_cache_without_opening_browser(self, chooser) -> None:
         shell = _settings_shell()
+        shell._dialog.winfo_exists.return_value = True
         old = DeviceApp("Old", "com.example.old", False)
         new = DeviceApp("New", "com.example.new", False)
         key = shell._current_app_cache_key()
         shell._app_cache[key] = [old]
         shell._app_request = 5
         shell._app_loading = True
+        shell._app_poll_job = "app-poll"
         shell._app_results.put((5, key, [new], "", False))
 
         shell._poll_app_results()
 
         self.assertEqual(shell._app_cache[key], [new])
+        self.assertIsNone(shell._app_poll_job)
+        shell._dialog.after.assert_not_called()
         chooser.assert_not_called()
         self.assertIn("Refreshed 1 application", shell._app_status_var.set.call_args.args[0])
 
@@ -254,6 +261,7 @@ class SettingsAppBrowserTests(unittest.TestCase):
         shell._device_request = 4
         shell._app_request = 6
         shell._device_loading = True
+        shell._device_poll_job = "device-poll"
         shell._syncing_controls = False
         shell._apply_device_choices = MagicMock()
         shell._refresh_button = MagicMock()
@@ -264,23 +272,69 @@ class SettingsAppBrowserTests(unittest.TestCase):
         self.assertEqual(shell._device_request, 5)
         self.assertEqual(shell._app_request, 7)
         self.assertFalse(shell._device_loading)
+        self.assertIsNone(shell._device_poll_job)
         self.assertEqual(shell._detected_devices, [])
         self.assertFalse(shell._syncing_controls)
         shell._apply_device_choices.assert_called_once_with()
         self.assertIn("refresh devices", shell._device_status_var.set.call_args.args[0])
         shell._refresh_button.configure.assert_called_once_with(state="normal")
+        shell._dialog.after_cancel.assert_called_once_with("device-poll")
+
+    def test_device_polling_has_one_callback_and_stops_after_current_result(self) -> None:
+        shell = _settings_shell()
+        shell._dialog.winfo_exists.return_value = True
+        shell._dialog.after.return_value = "device-poll"
+        shell._device_loading = True
+        shell._device_request = 3
+        shell._refresh_button = MagicMock()
+        shell._device_status_var = MagicMock()
+        shell._apply_device_choices = MagicMock()
+        shell._device_results.put((3, [Device("ABC", "device")], ""))
+
+        shell._schedule_device_poll()
+        shell._schedule_device_poll()
+        shell._poll_device_results()
+
+        shell._dialog.after.assert_called_once_with(100, shell._poll_device_results)
+        self.assertIsNone(shell._device_poll_job)
+        self.assertFalse(shell._device_loading)
+        self.assertEqual(shell._detected_devices, [Device("ABC", "device")])
+
+    def test_application_polling_reschedules_only_while_request_is_active(self) -> None:
+        shell = _settings_shell()
+        shell._dialog.winfo_exists.return_value = True
+        shell._dialog.after.return_value = "app-poll"
+        shell._app_loading = True
+
+        shell._schedule_app_poll()
+        shell._schedule_app_poll()
+        shell._poll_app_results()
+
+        self.assertEqual(shell._dialog.after.call_count, 2)
+        shell._dialog.after.assert_called_with(100, shell._poll_app_results)
+        self.assertEqual(shell._app_poll_job, "app-poll")
 
     def test_closing_settings_invalidates_pending_results(self) -> None:
         shell = _settings_shell()
         shell._device_request = 5
         shell._app_request = 7
+        shell._device_loading = True
         shell._app_loading = True
+        shell._device_poll_job = "device-poll"
+        shell._app_poll_job = "app-poll"
 
         shell._destroy_dialog()
 
         self.assertEqual(shell._device_request, 6)
         self.assertEqual(shell._app_request, 8)
+        self.assertFalse(shell._device_loading)
         self.assertFalse(shell._app_loading)
+        self.assertIsNone(shell._device_poll_job)
+        self.assertIsNone(shell._app_poll_job)
+        self.assertEqual(
+            shell._dialog.after_cancel.call_args_list,
+            [call("device-poll"), call("app-poll")],
+        )
         shell._dialog.destroy.assert_called_once_with()
 
     def test_dialog_choose_and_cancel_contract(self) -> None:

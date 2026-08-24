@@ -19,7 +19,6 @@ from .config_recovery import (
 from .logging_setup import setup_logging
 from .paths import PortableConfigError, resolve_config_path, seed_portable_config
 from .single_instance import SingleInstance, SingleInstanceError
-from .tray import run_tray
 from .winui import DialogChoice, ask_yes_no, ask_yes_no_cancel, show_error, show_info
 
 logger = logging.getLogger(__name__)
@@ -88,7 +87,7 @@ def _run(log_path: Path, explicit_config_path: str | None = None) -> int:
     logger.info("Loaded %d configured sessions", len(config.sessions))
 
     try:
-        run_tray(config)
+        _run_tray(config)
     except Exception as exc:
         logger.exception("Fatal tray error")
         show_error(
@@ -97,6 +96,13 @@ def _run(log_path: Path, explicit_config_path: str | None = None) -> int:
         )
         return 1
     return 0
+
+
+def _run_tray(config: Config) -> None:
+    """Import and run the Win32 tray only after tray mode is selected."""
+    from .tray import run_tray
+
+    run_tray(config)
 
 
 def _load_startup_config(config_path: Path, log_path: Path) -> Config | None:

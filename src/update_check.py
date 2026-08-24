@@ -14,8 +14,6 @@ from urllib.request import Request, urlopen
 LATEST_RELEASE_API = (
     "https://api.github.com/repos/wwalsh/scrcpy-launcher/releases/latest"
 )
-REPOSITORY_URL = "https://github.com/wwalsh/scrcpy-launcher"
-LATEST_RELEASE_URL = f"{REPOSITORY_URL}/releases/latest"
 GITHUB_API_VERSION = "2026-03-10"
 DEFAULT_TIMEOUT_SECONDS = 8.0
 MAX_RESPONSE_BYTES = 256 * 1024

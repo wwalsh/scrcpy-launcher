@@ -15,14 +15,9 @@ import win32gui
 from .bundled_manifest import BUNDLED_SCRCPY_VERSION
 from .config import Config, ConfigError, Session, load_config
 from .launcher import SessionLaunchError, launch_session
+from .project_links import LATEST_RELEASE_URL, REPOSITORY_URL
 from .runtime import resource_path, settings_launch_spec
 from .scrcpy_runtime import ScrcpyResolutionError, resolve_scrcpy
-from .update_check import (
-    LATEST_RELEASE_URL,
-    REPOSITORY_URL,
-    UpdateCheckError,
-    check_latest_release,
-)
 from .version import APP_VERSION
 from .winui import (
     DialogChoice,
@@ -311,6 +306,8 @@ def _show_about() -> None:
 
 def _run_update_check() -> None:
     global _update_check_thread
+    from .update_check import UpdateCheckError, check_latest_release
+
     try:
         result = check_latest_release(APP_VERSION)
         if result.update_available:

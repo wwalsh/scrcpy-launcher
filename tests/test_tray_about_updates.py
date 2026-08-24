@@ -6,9 +6,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from src import tray
+from src.project_links import LATEST_RELEASE_URL, REPOSITORY_URL
 from src.update_check import (
-    LATEST_RELEASE_URL,
-    REPOSITORY_URL,
     UpdateCheckError,
     UpdateResult,
 )
@@ -43,7 +42,7 @@ class TrayAboutUpdateTests(unittest.TestCase):
 
     @patch("src.tray._open_project_url")
     @patch("src.tray.ask_yes_no_information", return_value=DialogChoice.YES)
-    @patch("src.tray.check_latest_release")
+    @patch("src.update_check.check_latest_release")
     def test_available_update_can_open_latest_release(self, check, _ask, open_project) -> None:
         check.return_value = UpdateResult("0.7.1", "0.8.0", True)
 
@@ -53,7 +52,7 @@ class TrayAboutUpdateTests(unittest.TestCase):
         self.assertIsNone(tray._update_check_thread)
 
     @patch("src.tray.show_info")
-    @patch("src.tray.check_latest_release")
+    @patch("src.update_check.check_latest_release")
     def test_current_version_reports_up_to_date(self, check, show_info) -> None:
         check.return_value = UpdateResult("0.7.1", "0.7.1", False)
 
@@ -62,7 +61,7 @@ class TrayAboutUpdateTests(unittest.TestCase):
         self.assertIn("up to date", show_info.call_args.args[1])
 
     @patch("src.tray.show_error")
-    @patch("src.tray.check_latest_release", side_effect=UpdateCheckError("offline"))
+    @patch("src.update_check.check_latest_release", side_effect=UpdateCheckError("offline"))
     def test_update_failure_is_nonfatal_and_visible(self, _check, show_error) -> None:
         with self.assertLogs("src.tray", level="WARNING"):
             tray._run_update_check()

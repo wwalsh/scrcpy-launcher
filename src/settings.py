@@ -102,11 +102,13 @@ class _SettingsDialog:
         self._args_sync_job: str | None = None
         self._device_request = 0
         self._device_loading = False
+        self._device_poll_job: str | None = None
         self._detected_devices: list[Device] = []
         self._device_by_label: dict[str, str] = {}
         self._device_results: queue.Queue[tuple[int, list[Device] | None, str]] = queue.Queue()
         self._app_request = 0
         self._app_loading = False
+        self._app_poll_job: str | None = None
         self._app_cache: dict[tuple[str, str, str], list[DeviceApp]] = {}
         self._app_results: queue.Queue[
             tuple[int, tuple[str, str, str], list[DeviceApp] | None, str, bool]
@@ -150,8 +152,6 @@ class _SettingsDialog:
         self._load_state()
         self._center_dialog()
         self._refresh_devices()
-        self._poll_device_results()
-        self._poll_app_results()
 
         self._dialog.wait_window()
 
@@ -424,6 +424,7 @@ class _SettingsDialog:
     def _on_scrcpy_path_changed(self, *_event) -> None:
         self._device_request += 1
         self._device_loading = False
+        self._cancel_device_poll()
         self._detected_devices = []
         self._invalidate_app_discovery()
         was_syncing = self._syncing_controls
@@ -576,8 +577,23 @@ class _SettingsDialog:
                 self._device_results.put((request, None, str(exc)))
 
         threading.Thread(target=worker, daemon=True).start()
+        self._schedule_device_poll()
+
+    def _schedule_device_poll(self) -> None:
+        if self._device_poll_job is None and self._dialog.winfo_exists():
+            self._device_poll_job = self._dialog.after(100, self._poll_device_results)
+
+    def _cancel_device_poll(self) -> None:
+        if self._device_poll_job is None:
+            return
+        try:
+            self._dialog.after_cancel(self._device_poll_job)
+        except tk.TclError:
+            pass
+        self._device_poll_job = None
 
     def _poll_device_results(self) -> None:
+        self._device_poll_job = None
         try:
             while True:
                 request, devices, error = self._device_results.get_nowait()
@@ -597,8 +613,8 @@ class _SettingsDialog:
                 self._syncing_controls = False
         except queue.Empty:
             pass
-        if self._dialog.winfo_exists():
-            self._dialog.after(100, self._poll_device_results)
+        if self._device_loading:
+            self._schedule_device_poll()
 
     def _selected_connected_serial(self) -> str:
         return _connected_serial_for_selection(
@@ -627,6 +643,7 @@ class _SettingsDialog:
     def _invalidate_app_discovery(self) -> None:
         self._app_request += 1
         self._app_loading = False
+        self._cancel_app_poll()
         self._app_status_var.set(self._default_app_status())
         self._update_app_button_state()
 
@@ -690,8 +707,23 @@ class _SettingsDialog:
                 self._app_results.put((request, key, None, str(exc), open_after_load))
 
         threading.Thread(target=worker, daemon=True).start()
+        self._schedule_app_poll()
+
+    def _schedule_app_poll(self) -> None:
+        if self._app_poll_job is None and self._dialog.winfo_exists():
+            self._app_poll_job = self._dialog.after(100, self._poll_app_results)
+
+    def _cancel_app_poll(self) -> None:
+        if self._app_poll_job is None:
+            return
+        try:
+            self._dialog.after_cancel(self._app_poll_job)
+        except tk.TclError:
+            pass
+        self._app_poll_job = None
 
     def _poll_app_results(self) -> None:
+        self._app_poll_job = None
         try:
             while True:
                 request, key, apps, error, open_after_load = self._app_results.get_nowait()
@@ -736,8 +768,8 @@ class _SettingsDialog:
                     )
         except queue.Empty:
             pass
-        if self._dialog.winfo_exists():
-            self._dialog.after(100, self._poll_app_results)
+        if self._app_loading:
+            self._schedule_app_poll()
 
     def _open_app_chooser(self, apps: list[DeviceApp]) -> None:
         if not apps:
@@ -1072,7 +1104,10 @@ class _SettingsDialog:
     def _destroy_dialog(self) -> None:
         self._device_request += 1
         self._app_request += 1
+        self._device_loading = False
         self._app_loading = False
+        self._cancel_device_poll()
+        self._cancel_app_poll()
         self._dialog.destroy()
 
 

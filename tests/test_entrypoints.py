@@ -86,7 +86,7 @@ class EntrypointTests(unittest.TestCase):
         single_instance.return_value.acquire.return_value = True
         inspection.return_value.backup_valid = False
         with patch.object(main.sys, "argv", ["scrcpy-launcher"]), patch(
-            "src.main.run_tray"
+            "src.main._run_tray"
         ) as run_tray:
             with self.assertLogs("src.main", level="ERROR"):
                 result = main.main()
@@ -191,7 +191,7 @@ class EntrypointTests(unittest.TestCase):
         self.assertIn("mutex failed", show_error.call_args.args[1])
         single_instance.return_value.release.assert_not_called()
 
-    @patch("src.main.run_tray")
+    @patch("src.main._run_tray")
     @patch("src.main.load_config")
     @patch("src.main.setup_logging", return_value=Path("tray.log"))
     @patch("src.main.SingleInstance")
@@ -209,7 +209,7 @@ class EntrypointTests(unittest.TestCase):
         single_instance.return_value.release.assert_called_once_with()
 
     @patch("src.main.show_error")
-    @patch("src.main.run_tray", side_effect=RuntimeError("tray failed"))
+    @patch("src.main._run_tray", side_effect=RuntimeError("tray failed"))
     @patch("src.main.load_config")
     @patch("src.main.setup_logging", return_value=Path("tray.log"))
     @patch("src.main.SingleInstance")
