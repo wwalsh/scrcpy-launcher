@@ -16,6 +16,15 @@ window layout, or use case.
 The packaged application includes verified copies of scrcpy 4.1 and ADB. An
 installed or portable user does not need Python or a separate scrcpy download.
 
+## Download
+
+Official installer and portable releases are published on the
+[GitHub Releases page](https://github.com/wwalsh/scrcpy-launcher/releases).
+
+Download release artifacts only from the official project repository or the
+project website at https://scrcpy-launcher.link/. Published SHA-256 checksum
+files can be used to verify downloaded artifacts.
+
 ## Choose an edition
 
 | Edition | Best for | Configuration location |
@@ -179,11 +188,34 @@ See the [code signing policy](docs/code-signing-policy.md) for eligible artifact
 - [Security model and accepted risks](docs/security-model.md)
 - [Third-party notices](THIRD-PARTY-NOTICES.md)
 
-## Development summary
+## Build from source
 
-Source development requires Windows 11, Python 3.10 or newer, and the locked
-dependencies in `requirements.txt`. See [docs/building.md](docs/building.md) for
-source setup, architecture, tests, dependency review, and release packaging.
+Building scrcpy-launcher requires Windows 11, Python 3.10 or newer, and NSIS 3
+for installer builds.
+
+From PowerShell in the repository, create a virtual environment and install the
+exact, hash-locked build dependencies:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --require-hashes -r requirements-build.txt
+```
+
+Run the complete release build with:
+
+```powershell
+.\packaging\build.ps1
+```
+
+The build validates dependency policy, runs the automated tests, builds the
+application, stages and verifies the pinned scrcpy runtime, creates the portable
+and installer packages, verifies the resulting artifacts, and writes SHA-256
+checksum files under `dist\artifacts`.
+
+For development setup, testing commands, offline dependency caching, NSIS
+configuration, and the full release procedure, see
+[Building and testing](docs/building.md).
 
 ## License
 
