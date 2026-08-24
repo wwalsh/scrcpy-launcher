@@ -7,7 +7,8 @@ from pathlib import Path
 from src.version import APP_VERSION
 
 
-SITE = Path(__file__).parents[1] / "site"
+ROOT = Path(__file__).parents[1]
+SITE = ROOT / "site"
 
 
 class SiteTests(unittest.TestCase):
@@ -68,6 +69,18 @@ class SiteTests(unittest.TestCase):
         ):
             self.assertIn(value, html)
         self.assertIn(f"Current release: v{APP_VERSION}", html)
+        self.assertIn(f"What's new in v{APP_VERSION}", html)
+        self.assertIn(f"releases/tag/v{APP_VERSION}", html)
+        self.assertIn("blob/main/CHANGELOG.md", html)
+
+    def test_changelog_starts_with_current_public_release(self) -> None:
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        versions = re.findall(r"^## \[([0-9]+\.[0-9]+\.[0-9]+)\]", changelog, re.M)
+
+        self.assertGreaterEqual(len(versions), 3)
+        self.assertEqual(versions[0], APP_VERSION)
+        self.assertEqual(versions[:3], ["0.7.3", "0.7.2", "0.7.1"])
+        self.assertIn("Keep a Changelog", changelog)
 
 
 if __name__ == "__main__":

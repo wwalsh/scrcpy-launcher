@@ -156,13 +156,15 @@ The release build fails when the native review is stale, incomplete, marked
 
 ## Release checklist
 
-- Update `src/version.py`, the NSIS fallback version, and the visible website
-  release version.
+- Update `src/version.py`, the NSIS fallback version, `CHANGELOG.md`, and the
+  website's current-release and What's New text.
 - Refresh dependency review records when required.
 - Run the complete build.
 - Follow [windows-lifecycle-test.md](windows-lifecycle-test.md).
 - Confirm the installer and portable hashes.
 - Inspect the working tree for personal configuration and generated reports.
+- Use the matching changelog entry as the basis for reviewed GitHub release
+  notes.
 - Create the release commit and annotated tag only after acceptance.
 
 Authenticode signing is not currently part of the release process.
