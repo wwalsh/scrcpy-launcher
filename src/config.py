@@ -282,7 +282,13 @@ class Config:
         self._scrcpy_path = self._validate_scrcpy_path(value)
 
     def save(self) -> None:
-        """Persist the current configuration to config_path, preserving a .bak backup."""
+        """Persist configuration atomically while preserving a valid ``.bak``.
+
+        The existing primary is copied and validated in the temporary backup
+        before replacement. This both protects the previous backup from a
+        corrupt primary and avoids parsing the primary once before copying and
+        again while validating the copied backup.
+        """
         self._scrcpy_mode = self._validate_scrcpy_mode(self._scrcpy_mode)
         self._scrcpy_path = self._validate_scrcpy_path(self._scrcpy_path)
         self._sessions = self.validate_session_objects(self._sessions)
@@ -290,7 +296,7 @@ class Config:
         bak_path = backup_path_for(self._config_path)
         if self._config_path.exists():
             try:
-                Config(self._config_path)
+                _atomic_copy(self._config_path, bak_path)
             except ConfigError as exc:
                 logger.warning(
                     "Not replacing %s because the current primary configuration is invalid: %s",

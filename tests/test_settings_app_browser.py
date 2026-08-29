@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import queue
 import unittest
+from concurrent.futures import Future
 from unittest.mock import MagicMock, call, patch
 
 from src.device_apps import DeviceApp
@@ -16,13 +17,19 @@ from src.settings import (
 )
 
 
-class _ImmediateThread:
-    def __init__(self, *, target, daemon) -> None:
-        self.target = target
-        self.daemon = daemon
+class _ImmediateExecutor:
+    """Run submitted work immediately while preserving the executor contract."""
 
-    def start(self) -> None:
-        self.target()
+    def submit(self, function):
+        future = Future()
+        try:
+            future.set_result(function())
+        except BaseException as exc:
+            future.set_exception(exc)
+        return future
+
+    def shutdown(self, *, wait, cancel_futures):
+        pass
 
 
 def _settings_shell() -> _SettingsDialog:
@@ -39,6 +46,10 @@ def _settings_shell() -> _SettingsDialog:
     dialog._app_results = queue.Queue()
     dialog._device_poll_job = None
     dialog._device_results = queue.Queue()
+    dialog._device_executor = _ImmediateExecutor()
+    dialog._device_future = None
+    dialog._app_executor = _ImmediateExecutor()
+    dialog._app_future = None
     dialog._select_app_button = MagicMock()
     dialog._refresh_apps_button = MagicMock()
     dialog._app_status_var = MagicMock()
@@ -54,7 +65,6 @@ def _settings_shell() -> _SettingsDialog:
 
 
 class SettingsAppBrowserTests(unittest.TestCase):
-    @patch("src.settings.threading.Thread", _ImmediateThread)
     @patch("src.settings.discover_device_apps")
     def test_uncached_selection_starts_background_discovery_without_mutating_session(
         self, discover
@@ -89,7 +99,6 @@ class SettingsAppBrowserTests(unittest.TestCase):
         chooser.assert_called_once_with(shell._dialog, [app])
         shell._start_app_var.set.assert_not_called()
 
-    @patch("src.settings.threading.Thread", _ImmediateThread)
     @patch("src.settings.discover_device_apps")
     def test_refresh_forces_discovery_when_cache_exists(self, discover) -> None:
         shell = _settings_shell()

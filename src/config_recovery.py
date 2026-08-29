@@ -87,7 +87,11 @@ def restore_backup(
             except ConfigError as exc:
                 raise BackupInvalidError(f"Backup is no longer valid: {exc}") from exc
 
+        # Revalidate the staged copy even though inspection already accepted
+        # the backup: the file may have changed between inspection and copy.
         atomic_copy(backup, primary, validate=validate_staged)
+        # A second load is intentional. It returns a Config bound to the real
+        # primary path rather than the temporary path validated above.
         restored = load_config(primary)
     except BackupInvalidError:
         if archived_path is not None and archived_path.exists() and not primary.exists():

@@ -25,7 +25,7 @@ APP_OUTPUT = """scrcpy 4.1 <https://github.com/Genymobile/scrcpy>
 
 
 class DeviceAppDiscoveryTests(unittest.TestCase):
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_runs_hidden_explicit_serial_command_and_accepts_success_stderr(self, run) -> None:
         run.return_value = subprocess.CompletedProcess(
             [], 0, APP_OUTPUT, "scrcpy-server: 1 file pushed"
@@ -108,7 +108,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
 
         list_apps.assert_not_called()
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_requires_explicit_serial_and_positive_timeout(self, run) -> None:
         with self.assertRaisesRegex(AppDiscoveryError, "Select a connected"):
             list_device_apps("scrcpy.exe", "  ")
@@ -118,7 +118,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         run.assert_not_called()
 
     @patch(
-        "src.device_apps.subprocess.run",
+        "src.process.subprocess.run",
         side_effect=subprocess.TimeoutExpired("scrcpy", 7),
     )
     def test_timeout_is_controlled(self, _run) -> None:
@@ -127,12 +127,12 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         ):
             list_device_apps("scrcpy.exe", "ABC", timeout=7)
 
-    @patch("src.device_apps.subprocess.run", side_effect=OSError("blocked"))
+    @patch("src.process.subprocess.run", side_effect=OSError("blocked"))
     def test_process_launch_failure_is_controlled(self, _run) -> None:
         with self.assertRaisesRegex(AppDiscoveryError, "Could not run scrcpy.*blocked"):
             list_device_apps("scrcpy.exe", "ABC")
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_nonzero_exit_prefers_stderr_diagnostics(self, run) -> None:
         run.return_value = subprocess.CompletedProcess(
             [],
@@ -147,7 +147,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         self.assertNotIn("Private App", str(raised.exception))
         self.assertIn("USB debugging", str(raised.exception))
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_unsupported_list_apps_option_has_upgrade_guidance(self, run) -> None:
         run.return_value = subprocess.CompletedProcess(
             [], 1, "scrcpy 1.20\n", "ERROR: Unknown option --list-apps"
@@ -158,7 +158,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         ):
             list_device_apps("old-scrcpy.exe", "ABC")
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_offline_and_missing_devices_have_recovery_guidance(self, run) -> None:
         for diagnostic, expected in (
             ("ERROR: device ABC is offline", "offline.*refresh devices"),
@@ -169,7 +169,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
                 with self.assertRaisesRegex(AppDiscoveryError, expected):
                     list_device_apps("scrcpy.exe", "ABC")
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_nonzero_exit_filters_partial_inventory_from_stdout(self, run) -> None:
         run.return_value = subprocess.CompletedProcess(
             [],
@@ -183,7 +183,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
 
         self.assertNotIn("Secret", str(raised.exception))
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_parser_failure_is_wrapped_without_inventory(self, run) -> None:
         run.return_value = subprocess.CompletedProcess([], 0, "unexpected output", "")
 
@@ -192,7 +192,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         ):
             list_device_apps("scrcpy.exe", "ABC")
 
-    @patch("src.device_apps.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_valid_empty_list_is_successful(self, run) -> None:
         run.return_value = subprocess.CompletedProcess(
             [], 0, "[server] INFO: List of apps:\n", ""

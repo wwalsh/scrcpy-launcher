@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .scrcpy_runtime import ScrcpyResolutionError, resolve_scrcpy
+from .process import run_hidden
 
 
 logger = logging.getLogger(__name__)
@@ -74,15 +75,9 @@ def list_device_apps(
     command = [str(executable), "--serial", normalized_serial, "--list-apps"]
     started = time.monotonic()
     try:
-        completed = subprocess.run(
+        completed = run_hidden(
             command,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
             timeout=timeout,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            check=False,
         )
     except subprocess.TimeoutExpired as exc:
         logger.warning("scrcpy app discovery timed out after %g seconds", timeout)

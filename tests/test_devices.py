@@ -33,7 +33,7 @@ class DeviceTests(unittest.TestCase):
 
         self.assertEqual(devices[0].label, "moto g power 5G 2024 — ABC")
 
-    @patch("src.devices.subprocess.run")
+    @patch("src.process.subprocess.run")
     @patch("src.devices.find_adb", return_value=Path("adb.exe"))
     def test_detect_devices_runs_long_listing(self, _find_adb, run) -> None:
         run.return_value = subprocess.CompletedProcess([], 0, ADB_OUTPUT, "")
@@ -44,7 +44,7 @@ class DeviceTests(unittest.TestCase):
         _find_adb.assert_called_once_with("scrcpy.exe", allow_path_fallback=True)
         self.assertEqual(run.call_args.args[0], ["adb.exe", "devices", "-l"])
 
-    @patch("src.devices.subprocess.run", side_effect=subprocess.TimeoutExpired("adb", 5))
+    @patch("src.process.subprocess.run", side_effect=subprocess.TimeoutExpired("adb", 5))
     @patch("src.devices.find_adb", return_value=Path("adb.exe"))
     def test_reports_timeout(self, _find_adb, _run) -> None:
         with self.assertRaisesRegex(DeviceDiscoveryError, "timed out"):

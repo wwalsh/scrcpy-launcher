@@ -9,6 +9,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from .process import run_hidden
+
 
 class DeviceDiscoveryError(Exception):
     """Raised when ADB device discovery cannot complete."""
@@ -55,15 +57,9 @@ def detect_devices(
     """Return devices reported by ``adb devices -l``."""
     adb_path = find_adb(scrcpy_path, allow_path_fallback=allow_path_fallback)
     try:
-        completed = subprocess.run(
+        completed = run_hidden(
             [str(adb_path), "devices", "-l"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
             timeout=timeout,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            check=False,
         )
     except subprocess.TimeoutExpired as exc:
         raise DeviceDiscoveryError(f"Device detection timed out after {timeout:g} seconds") from exc

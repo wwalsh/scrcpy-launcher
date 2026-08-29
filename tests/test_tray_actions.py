@@ -10,6 +10,17 @@ from src.winui import DialogChoice
 
 
 class TrayActionTests(unittest.TestCase):
+    @patch("src.tray.shutil.which", return_value="adb.exe")
+    @patch("src.tray._resolve_configured_scrcpy")
+    def test_adb_lookup_reuses_menu_scrcpy_resolution(self, resolve, which) -> None:
+        config = Mock()
+
+        result = tray._resolve_adb_path(config, scrcpy_path="C:/app/scrcpy.exe")
+
+        self.assertEqual(result, "adb.exe")
+        resolve.assert_not_called()
+        which.assert_called_once_with("adb.exe")
+
     def test_stop_all_sessions_delegates_to_launcher_manager(self) -> None:
         with patch("src.tray.stop_all_sessions", return_value=2) as stop:
             tray._stop_all_sessions()

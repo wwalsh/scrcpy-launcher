@@ -168,6 +168,7 @@ def _restore_icon(hwnd: int) -> bool:
 
 def _show_menu(hwnd: int) -> None:
     global _state
+    scrcpy_path: str | None = None
     try:
         _state = load_config(_state.config_path)
     except ConfigError as exc:
@@ -178,7 +179,8 @@ def _show_menu(hwnd: int) -> None:
             "The last successfully loaded sessions will remain available.",
         )
     else:
-        _log_scrcpy_selection(_state)
+        scrcpy_path = _resolve_configured_scrcpy(_state, report_error=False)
+        _log_scrcpy_selection(_state, scrcpy_path)
     x, y = win32gui.GetCursorPos()
     hmenu = win32gui.CreatePopupMenu()
 
@@ -202,7 +204,7 @@ def _show_menu(hwnd: int) -> None:
     )
     stop_adb_flags = (
         win32con.MF_STRING
-        if _resolve_adb_path(_state) is not None
+        if _resolve_adb_path(_state, scrcpy_path=scrcpy_path) is not None
         else win32con.MF_STRING | win32con.MF_GRAYED
     )
     win32gui.AppendMenu(hmenu, stop_sessions_flags, stop_sessions_id, "Stop all scrcpy sessions")
@@ -260,13 +262,18 @@ def _resolve_configured_scrcpy(config: Config, *, report_error: bool) -> str | N
     return str(resolution.path)
 
 
-def _log_scrcpy_selection(config: Config) -> None:
-    _resolve_configured_scrcpy(config, report_error=False)
+def _log_scrcpy_selection(config: Config, scrcpy_path: str | None = None) -> None:
+    """Log the selected scrcpy runtime, reusing a menu-build resolution when available."""
+    if scrcpy_path is None:
+        scrcpy_path = _resolve_configured_scrcpy(config, report_error=False)
+    if scrcpy_path is not None:
+        logger.info("Using %s", scrcpy_path)
 
 
-def _resolve_adb_path(config: Config) -> str | None:
-    """Resolve ADB beside the selected scrcpy executable or from PATH."""
-    scrcpy_path = _resolve_configured_scrcpy(config, report_error=False)
+def _resolve_adb_path(config: Config, *, scrcpy_path: str | None = None) -> str | None:
+    """Resolve ADB beside scrcpy or from PATH, reusing a known scrcpy path."""
+    if scrcpy_path is None:
+        scrcpy_path = _resolve_configured_scrcpy(config, report_error=False)
     if scrcpy_path:
         adjacent = Path(scrcpy_path).with_name("adb.exe")
         if adjacent.is_file():

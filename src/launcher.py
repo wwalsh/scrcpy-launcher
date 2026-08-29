@@ -10,6 +10,8 @@ import threading
 import time
 from collections.abc import Callable, Sequence
 
+from .process import hidden_process_kwargs, run_hidden
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +50,13 @@ def _process_has_visible_window(process_id: int) -> bool:
 
 
 class _StartupState:
-    """Share startup completion state between the monitor threads."""
+    """Share the startup boundary between the monitor and watcher threads.
+
+    The watcher sets ``suppress_errors`` after a visible scrcpy window is
+    found or the bounded startup interval expires. The monitor then treats
+    later nonzero exits as expected session termination rather than startup
+    failures that require a dialog.
+    """
 
     def __init__(self) -> None:
         self.suppress_errors = threading.Event()
@@ -71,7 +79,12 @@ class _ProcessManager:
         args: Sequence[str],
         on_error: ErrorCallback | None = None,
     ) -> subprocess.Popen[str]:
-        """Start one scrcpy process and attach startup and exit monitors."""
+        """Start scrcpy and attach independent startup and exit monitors.
+
+        Two daemon threads are intentional: the exit monitor may block in
+        ``communicate()`` while the startup watcher continues checking for the
+        window that marks the end of dialog-worthy startup failures.
+        """
         command = [scrcpy_path, *args]
         try:
             process = subprocess.Popen(
@@ -81,7 +94,7 @@ class _ProcessManager:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                **hidden_process_kwargs(),
             )
         except FileNotFoundError as exc:
             raise SessionLaunchError(f"scrcpy executable not found: {scrcpy_path}") from exc
@@ -141,6 +154,7 @@ class _ProcessManager:
         process: subprocess.Popen[str],
         startup_state: _StartupState,
     ) -> None:
+        """Watch for the startup window and close the error-reporting period."""
         deadline = time.monotonic() + STARTUP_WINDOW_TIMEOUT_SECONDS
         while process.poll() is None:
             try:
@@ -162,6 +176,12 @@ class _ProcessManager:
         on_error: ErrorCallback | None,
         startup_state: _StartupState | None = None,
     ) -> None:
+        """Collect process diagnostics, remove the process, and report failures.
+
+        Failures are sent to ``on_error`` only while startup is unresolved.
+        Once startup completes, a nonzero exit is logged as an expected
+        disconnection or session shutdown.
+        """
         try:
             _stdout, stderr = process.communicate()
             returncode = process.returncode
@@ -216,16 +236,12 @@ def stop_adb_server(adb_path: str) -> bool:
     confirmation before invoking this operation.
     """
     try:
-        completed = subprocess.run(
+        completed = run_hidden(
             [adb_path, "kill-server"],
+            timeout=ADB_STOP_TIMEOUT_SECONDS,
+            capture_output=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=ADB_STOP_TIMEOUT_SECONDS,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            check=False,
         )
     except (FileNotFoundError, PermissionError, OSError, subprocess.TimeoutExpired):
         logger.exception("Could not stop ADB server using %s", adb_path)

@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import queue
-import threading
+from concurrent.futures import Future, ThreadPoolExecutor
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -106,6 +106,13 @@ class _SettingsDialog:
         self._detected_devices: list[Device] = []
         self._device_by_label: dict[str, str] = {}
         self._device_results: queue.Queue[tuple[int, list[Device] | None, str]] = queue.Queue()
+        # A single worker prevents repeated refresh clicks from starting
+        # competing ADB discovery subprocesses. Request generations still
+        # protect the UI when a running subprocess finishes out of date.
+        self._device_executor = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="scrcpy-device-discovery"
+        )
+        self._device_future: Future[None] | None = None
         self._app_request = 0
         self._app_loading = False
         self._app_poll_job: str | None = None
@@ -113,6 +120,12 @@ class _SettingsDialog:
         self._app_results: queue.Queue[
             tuple[int, tuple[str, str, str], list[DeviceApp] | None, str, bool]
         ] = queue.Queue()
+        # App discovery has the same single-flight lifecycle as device
+        # discovery, keeping ADB/scrcpy subprocess count bounded per dialog.
+        self._app_executor = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="scrcpy-app-discovery"
+        )
+        self._app_future: Future[None] | None = None
         self._autostart_manager: AutostartManager | None = None
         self._autostart_initial = False
         self._autostart_needs_repair = False
@@ -156,6 +169,7 @@ class _SettingsDialog:
         self._dialog.wait_window()
 
     def _build_ui(self) -> None:
+        """Build the Settings dialog from its runtime, session, and footer sections."""
         self._dialog.rowconfigure(0, weight=1)
         self._dialog.columnconfigure(0, weight=1)
 
@@ -164,48 +178,7 @@ class _SettingsDialog:
         outer.rowconfigure(2, weight=1)
         outer.columnconfigure(1, weight=1)
 
-        path_frame = ttk.LabelFrame(outer, text="scrcpy executable", padding=10)
-        path_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-        path_frame.columnconfigure(1, weight=1)
-        self._mode_var = tk.StringVar(value=SCRCPY_MODE_BUNDLED)
-        ttk.Radiobutton(
-            path_frame,
-            text=f"Use bundled scrcpy {BUNDLED_SCRCPY_VERSION} (recommended)",
-            variable=self._mode_var,
-            value=SCRCPY_MODE_BUNDLED,
-            command=self._on_scrcpy_mode_changed,
-        ).grid(row=0, column=0, columnspan=3, sticky="w")
-        self._bundled_status_var = tk.StringVar()
-        ttk.Label(path_frame, textvariable=self._bundled_status_var).grid(
-            row=1, column=1, columnspan=2, sticky="w", pady=(2, 6)
-        )
-        ttk.Radiobutton(
-            path_frame,
-            text="Use a custom scrcpy executable",
-            variable=self._mode_var,
-            value=SCRCPY_MODE_CUSTOM,
-            command=self._on_scrcpy_mode_changed,
-        ).grid(row=2, column=0, columnspan=3, sticky="w")
-        self._path_var = tk.StringVar()
-        self._path_entry = ttk.Entry(path_frame, textvariable=self._path_var)
-        self._path_entry.grid(row=3, column=1, sticky="ew", padx=(0, 8), pady=(4, 0))
-        self._browse_button = ttk.Button(path_frame, text="Browse…", command=self._browse_path)
-        self._browse_button.grid(row=3, column=2, pady=(4, 0))
-
-        windows_frame = ttk.LabelFrame(outer, text="Windows", padding=10)
-        windows_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
-        self._autostart_var = tk.BooleanVar(value=self._autostart_initial)
-        self._autostart_check = ttk.Checkbutton(
-            windows_frame,
-            text="Start scrcpy-launcher when I sign in",
-            variable=self._autostart_var,
-        )
-        self._autostart_check.grid(row=0, column=0, sticky="w")
-        if self._autostart_manager is None:
-            self._autostart_check.configure(state=tk.DISABLED)
-        ttk.Label(windows_frame, text=self._autostart_status_text).grid(
-            row=1, column=0, sticky="w", pady=(2, 0)
-        )
+        self._build_runtime_sections(outer)
 
         list_frame = ttk.LabelFrame(outer, text="Sessions", padding=10)
         list_frame.grid(row=2, column=0, sticky="nsew", padx=(0, 10))
@@ -391,6 +364,55 @@ class _SettingsDialog:
         ttk.Button(footer, text="Cancel", command=self._cancel).pack(side=tk.RIGHT)
         ttk.Button(footer, text="Save", command=self._save).pack(side=tk.RIGHT, padx=(0, 8))
 
+    def _build_runtime_sections(self, outer: ttk.Frame) -> None:
+        """Build executable-selection and Windows autostart controls.
+
+        This helper initializes the Tk variables and widgets consumed by the
+        runtime-selection callbacks and by :meth:`_load_state`.
+        """
+        path_frame = ttk.LabelFrame(outer, text="scrcpy executable", padding=10)
+        path_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        path_frame.columnconfigure(1, weight=1)
+        self._mode_var = tk.StringVar(value=SCRCPY_MODE_BUNDLED)
+        ttk.Radiobutton(
+            path_frame,
+            text=f"Use bundled scrcpy {BUNDLED_SCRCPY_VERSION} (recommended)",
+            variable=self._mode_var,
+            value=SCRCPY_MODE_BUNDLED,
+            command=self._on_scrcpy_mode_changed,
+        ).grid(row=0, column=0, columnspan=3, sticky="w")
+        self._bundled_status_var = tk.StringVar()
+        ttk.Label(path_frame, textvariable=self._bundled_status_var).grid(
+            row=1, column=1, columnspan=2, sticky="w", pady=(2, 6)
+        )
+        ttk.Radiobutton(
+            path_frame,
+            text="Use a custom scrcpy executable",
+            variable=self._mode_var,
+            value=SCRCPY_MODE_CUSTOM,
+            command=self._on_scrcpy_mode_changed,
+        ).grid(row=2, column=0, columnspan=3, sticky="w")
+        self._path_var = tk.StringVar()
+        self._path_entry = ttk.Entry(path_frame, textvariable=self._path_var)
+        self._path_entry.grid(row=3, column=1, sticky="ew", padx=(0, 8), pady=(4, 0))
+        self._browse_button = ttk.Button(path_frame, text="Browse…", command=self._browse_path)
+        self._browse_button.grid(row=3, column=2, pady=(4, 0))
+
+        windows_frame = ttk.LabelFrame(outer, text="Windows", padding=10)
+        windows_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self._autostart_var = tk.BooleanVar(value=self._autostart_initial)
+        self._autostart_check = ttk.Checkbutton(
+            windows_frame,
+            text="Start scrcpy-launcher when I sign in",
+            variable=self._autostart_var,
+        )
+        self._autostart_check.grid(row=0, column=0, sticky="w")
+        if self._autostart_manager is None:
+            self._autostart_check.configure(state=tk.DISABLED)
+        ttk.Label(windows_frame, text=self._autostart_status_text).grid(
+            row=1, column=0, sticky="w", pady=(2, 0)
+        )
+
     def _center_dialog(self) -> None:
         self._dialog.update_idletasks()
         width = max(self._dialog.winfo_reqwidth(), 820)
@@ -560,6 +582,13 @@ class _SettingsDialog:
             self._update_app_button_state()
 
     def _refresh_devices(self) -> None:
+        """Start one device discovery request and display only its latest result.
+
+        Discovery runs away from Tkinter in a single-worker executor. A newer
+        request cancels work that has not started and supersedes any request
+        already running; the request generation check in the polling method
+        prevents stale results from changing the dialog.
+        """
         self._device_request += 1
         self._device_loading = True
         self._invalidate_app_discovery()
@@ -576,7 +605,9 @@ class _SettingsDialog:
             except (DeviceDiscoveryError, ScrcpyResolutionError) as exc:
                 self._device_results.put((request, None, str(exc)))
 
-        threading.Thread(target=worker, daemon=True).start()
+        if self._device_future is not None:
+            self._device_future.cancel()
+        self._device_future = self._device_executor.submit(worker)
         self._schedule_device_poll()
 
     def _schedule_device_poll(self) -> None:
@@ -641,7 +672,11 @@ class _SettingsDialog:
         )
 
     def _invalidate_app_discovery(self) -> None:
+        """Invalidate pending app results and cancel queued discovery work."""
         self._app_request += 1
+        if self._app_future is not None:
+            self._app_future.cancel()
+            self._app_future = None
         self._app_loading = False
         self._cancel_app_poll()
         self._app_status_var.set(self._default_app_status())
@@ -687,6 +722,12 @@ class _SettingsDialog:
         *,
         open_after_load: bool,
     ) -> None:
+        """Load apps for one device without blocking the Tkinter event loop.
+
+        Only one app-discovery task is allowed per dialog. If the previous
+        task is already running, it is allowed to finish, while its result is
+        discarded unless its request generation and device key are current.
+        """
         mode = self._mode_var.get()
         custom_path = self._path_var.get().strip()
         serial = key[2]
@@ -706,7 +747,9 @@ class _SettingsDialog:
             except AppDiscoveryError as exc:
                 self._app_results.put((request, key, None, str(exc), open_after_load))
 
-        threading.Thread(target=worker, daemon=True).start()
+        if self._app_future is not None:
+            self._app_future.cancel()
+        self._app_future = self._app_executor.submit(worker)
         self._schedule_app_poll()
 
     def _schedule_app_poll(self) -> None:
@@ -1104,6 +1147,10 @@ class _SettingsDialog:
     def _destroy_dialog(self) -> None:
         self._device_request += 1
         self._app_request += 1
+        for executor in (self._device_executor, self._app_executor):
+            executor.shutdown(wait=False, cancel_futures=True)
+        self._device_future = None
+        self._app_future = None
         self._device_loading = False
         self._app_loading = False
         self._cancel_device_poll()

@@ -105,11 +105,29 @@ def validate_bundled_installation(*, root: Path | str | None = None) -> Path:
             "scrcpy-launcher."
         )
 
-    actual_files = {
-        path.relative_to(bundle_dir).as_posix()
-        for path in bundle_dir.rglob("*")
-        if path.is_file() and path != metadata_path
-    }
+    # Inventory and hash files in one walk. The inventory check remains
+    # separate from metadata validation, but avoids a second filesystem pass
+    # over the packaged runtime.
+    actual_files: set[str] = set()
+    actual_hashes: dict[str, str] = {}
+    for path in bundle_dir.rglob("*"):
+        if not path.is_file() or path == metadata_path:
+            continue
+        filename = path.relative_to(bundle_dir).as_posix()
+        actual_files.add(filename)
+        if filename not in BUNDLED_FILE_HASHES:
+            continue
+        digest = hashlib.sha256()
+        try:
+            with path.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        except OSError as exc:
+            raise ScrcpyResolutionError(
+                f"Could not verify bundled scrcpy file {path}: {exc}"
+            ) from exc
+        actual_hashes[filename] = digest.hexdigest()
+
     expected_files = set(BUNDLED_FILE_HASHES)
     if actual_files != expected_files:
         missing = sorted(expected_files - actual_files)
@@ -125,19 +143,10 @@ def validate_bundled_installation(*, root: Path | str | None = None) -> Path:
         )
 
     for filename, expected_hash in BUNDLED_FILE_HASHES.items():
-        path = bundle_dir / filename
-        digest = hashlib.sha256()
-        try:
-            with path.open("rb") as stream:
-                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-                    digest.update(chunk)
-        except OSError as exc:
+        if actual_hashes.get(filename) != expected_hash:
             raise ScrcpyResolutionError(
-                f"Could not verify bundled scrcpy file {path}: {exc}"
-            ) from exc
-        if digest.hexdigest() != expected_hash:
-            raise ScrcpyResolutionError(
-                f"Bundled scrcpy file failed verification: {path}. Repair or reinstall "
+                f"Bundled scrcpy file failed verification: {bundle_dir / filename}. "
+                "Repair or reinstall "
                 "scrcpy-launcher."
             )
     return scrcpy_path

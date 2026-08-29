@@ -32,6 +32,58 @@ The following behavior must remain documented near its implementation:
 - configuration writes are validated and atomic, with recovery backups kept;
 - bundled runtime files are verified before use;
 - update checks are user-initiated and do not download or execute releases.
+- external Android-tool commands use the shared hidden-process helper; callers
+  retain ownership of timeout, exit-code, and user-facing error interpretation.
+- Settings device and application discovery runs in single-worker executors;
+  request generations discard stale results, and queued work is cancelled when
+  a newer request or dialog shutdown supersedes it.
+- the tray reloads configuration when its menu opens, but reuses the resolved
+  scrcpy path for all decisions made while building that menu.
+- bundled validation inventories and hashes expected files in one directory
+  walk; configuration backups are copied through an independently validated
+  temporary file before replacement.
+- each launcher-owned scrcpy session has a blocking exit monitor and an
+  independent bounded startup-window watcher; this separation keeps startup
+  diagnostics responsive without adding a shared polling coordinator.
+
+## Settings dialog concurrency
+
+The Settings dialog keeps Tkinter work on its UI thread. Device and application
+discovery may invoke ADB or scrcpy and therefore run in separate, single-worker
+executors. A request generation identifies the latest user intent: an older
+running subprocess may finish naturally, but its result must be ignored after
+the generation or selected device changes. Work that has not started is
+cancelled, and executor shutdown cancels queued work when the dialog closes.
+
+The UI builders are divided by responsibility. Runtime-selection controls are
+constructed separately from the main session editor so callbacks can rely on
+their documented Tk variables and widgets without requiring contributors to
+read one large construction method.
+
+## Validation and recovery efficiency
+
+Bundled runtime validation performs metadata validation, inventory collection,
+and expected-file hashing in one filesystem walk. Unexpected files are recorded
+for the inventory check but are not hashed because they cannot match the
+trusted manifest. The process-local validation cache remains in place.
+
+Configuration saves validate the existing primary while copying it to the
+temporary backup, so an invalid primary cannot replace a valid backup without
+requiring a separate primary parse. Recovery intentionally validates the
+staged backup and then loads the replaced primary again: the first operation
+protects the atomic replacement, while the second constructs a configuration
+whose path is the real primary file rather than the temporary staging file.
+
+## Scrcpy session lifecycle
+
+The launcher intentionally uses two daemon threads per managed scrcpy
+process. The exit monitor blocks in ``communicate()`` to collect diagnostics,
+while the startup watcher independently checks for a visible top-level window
+for at most the startup interval. Once the window appears—or the interval
+expires—the watcher marks startup complete and later nonzero exits are logged
+without an error dialog. The separation is appropriate for the small number of
+sessions supported by the tray app and avoids introducing a more complex
+coordinator without a measured performance benefit.
 
 ## Documentation changes
 

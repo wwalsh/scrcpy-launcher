@@ -16,6 +16,33 @@ from src.launcher import (
 
 
 class LauncherTests(unittest.TestCase):
+    @patch("src.launcher.time.sleep")
+    @patch("src.launcher._process_has_visible_window", return_value=False)
+    @patch("src.launcher.time.monotonic", side_effect=[0.0, 11.0])
+    def test_startup_watcher_suppresses_errors_after_timeout(
+        self, _clock, _window, _sleep
+    ) -> None:
+        process = Mock()
+        process.poll.return_value = None
+        state = _StartupState()
+
+        _ProcessManager()._watch_startup(process, state)
+
+        self.assertTrue(state.suppress_errors.is_set())
+
+    @patch("src.launcher._process_has_visible_window", return_value=True)
+    @patch("src.launcher.time.monotonic", return_value=0.0)
+    def test_startup_watcher_suppresses_errors_when_window_appears(
+        self, _clock, _window
+    ) -> None:
+        process = Mock()
+        process.poll.return_value = None
+        state = _StartupState()
+
+        _ProcessManager()._watch_startup(process, state)
+
+        self.assertTrue(state.suppress_errors.is_set())
+
     @patch.dict(sys.modules)
     def test_process_window_lookup_uses_win32process(self) -> None:
         win32gui = Mock()
@@ -127,7 +154,7 @@ class LauncherTests(unittest.TestCase):
         process.terminate.assert_called_once_with()
         process.kill.assert_called_once_with()
 
-    @patch("src.launcher.subprocess.run")
+    @patch("src.process.subprocess.run")
     def test_stop_adb_server_runs_hidden_kill_server_command(self, run) -> None:
         from src.launcher import stop_adb_server
 
