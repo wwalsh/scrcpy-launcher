@@ -5,6 +5,13 @@ All notable changes to the public scrcpy-launcher releases are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - 2026-08-28
+
+### Fixed
+
+- Suppressed expected scrcpy disconnect errors after the session window opens,
+  while retaining diagnostics for failures during startup.
+
 ## [0.7.3] - 2026-08-23
 
 ### Changed
@@ -52,6 +59,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   dependency controls, bundled-runtime integrity verification, targeted log
   redaction, and hardened installer cleanup.
 
+[0.7.4]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/wwalsh/scrcpy-launcher/releases/tag/v0.7.1
