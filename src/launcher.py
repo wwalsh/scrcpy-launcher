@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import subprocess
 import threading
+import time
 from collections.abc import Callable, Sequence
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,38 @@ class SessionLaunchError(Exception):
 
 
 ErrorCallback = Callable[[SessionLaunchError], None]
+
+STARTUP_WINDOW_TIMEOUT_SECONDS = 10.0
+STARTUP_POLL_INTERVAL_SECONDS = 0.1
+
+
+def _process_has_visible_window(process_id: int) -> bool:
+    """Return whether a process owns a visible top-level Windows window."""
+    import win32gui
+    import win32con
+    import win32process
+
+    found = False
+
+    def inspect_window(hwnd: int, _extra: object) -> None:
+        nonlocal found
+        if found or not win32gui.IsWindowVisible(hwnd):
+            return
+        if win32gui.GetWindow(hwnd, win32con.GW_OWNER):
+            return
+        _thread_id, owner_process_id = win32process.GetWindowThreadProcessId(hwnd)
+        if owner_process_id == process_id:
+            found = True
+
+    win32gui.EnumWindows(inspect_window, None)
+    return found
+
+
+class _StartupState:
+    """Share startup completion state between the monitor threads."""
+
+    def __init__(self) -> None:
+        self.suppress_errors = threading.Event()
 
 
 class _ProcessManager:
@@ -52,14 +85,45 @@ class _ProcessManager:
 
         with self._lock:
             self._processes.append(process)
+        startup_state = _StartupState()
         threading.Thread(
             target=self._monitor,
-            args=(process, on_error),
+            args=(process, on_error, startup_state),
+            daemon=True,
+        ).start()
+        threading.Thread(
+            target=self._watch_startup,
+            args=(process, startup_state),
             daemon=True,
         ).start()
         return process
 
-    def _monitor(self, process: subprocess.Popen[str], on_error: ErrorCallback | None) -> None:
+    def _watch_startup(
+        self,
+        process: subprocess.Popen[str],
+        startup_state: _StartupState,
+    ) -> None:
+        deadline = time.monotonic() + STARTUP_WINDOW_TIMEOUT_SECONDS
+        while process.poll() is None:
+            try:
+                if _process_has_visible_window(process.pid):
+                    startup_state.suppress_errors.set()
+                    return
+            except (ImportError, OSError):
+                logger.exception("Could not inspect scrcpy windows")
+                return
+            if time.monotonic() >= deadline:
+                logger.debug("scrcpy startup window expired for process %s", process.pid)
+                startup_state.suppress_errors.set()
+                return
+            time.sleep(STARTUP_POLL_INTERVAL_SECONDS)
+
+    def _monitor(
+        self,
+        process: subprocess.Popen[str],
+        on_error: ErrorCallback | None,
+        startup_state: _StartupState | None = None,
+    ) -> None:
         try:
             _stdout, stderr = process.communicate()
             returncode = process.returncode
@@ -84,6 +148,9 @@ class _ProcessManager:
             message = f"{message}\n\n{detail}"
         error = SessionLaunchError(message)
         logger.error("scrcpy exited with code %s", code)
+        if startup_state is not None and startup_state.suppress_errors.is_set():
+            logger.info("Suppressing post-startup scrcpy error for process %s", process.pid)
+            return
         if on_error is not None:
             try:
                 on_error(error)

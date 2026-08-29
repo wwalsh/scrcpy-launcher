@@ -258,7 +258,9 @@ known launcher data while preserving unknown files in those folders.
 
 User-facing startup, Settings, configuration, and scrcpy failures appear in
 Windows dialogs. If scrcpy exits unsuccessfully, the full captured diagnostic is
-shown interactively; persistent logs retain the exit code without third-party
+shown interactively when the session fails during startup. Once the scrcpy window
+has opened, runtime exits such as device disconnections are logged without an
+additional dialog. Persistent logs retain the exit code without third-party
 stderr.
 
 ```text
