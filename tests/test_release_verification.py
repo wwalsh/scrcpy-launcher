@@ -29,6 +29,7 @@ PORTABLE_MARKER = VERIFY_RELEASE.PORTABLE_MARKER
 ReleaseVerificationError = VERIFY_RELEASE.ReleaseVerificationError
 verify_package_directory = VERIFY_RELEASE.verify_package_directory
 verify_portable_archive = VERIFY_RELEASE.verify_portable_archive
+verify_portableapps_installer = VERIFY_RELEASE.verify_portableapps_installer
 
 
 class ReleaseVerificationTests(unittest.TestCase):
@@ -125,6 +126,18 @@ class ReleaseVerificationTests(unittest.TestCase):
                 package_archive.extractall(destination)
 
             self.assertEqual(config.read_bytes(), original)
+
+    def test_portableapps_installer_requires_paf_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            valid = root / "scrcpy-launcherPortable_1.0.0.paf.exe"
+            valid.write_bytes(b"MZ" + (b"\0" * 2048))
+            verify_portableapps_installer(valid)
+
+            wrong_name = root / "portable.exe"
+            wrong_name.write_bytes(valid.read_bytes())
+            with self.assertRaisesRegex(ReleaseVerificationError, "end in .paf.exe"):
+                verify_portableapps_installer(wrong_name)
 
 
 if __name__ == "__main__":

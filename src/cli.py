@@ -13,6 +13,7 @@ class LaunchMode(Enum):
     TRAY = "tray"
     SETTINGS = "settings"
     PACKAGE_SMOKE_TEST = "package-smoke-test"
+    PORTABLEAPPS_SMOKE_TEST = "portableapps-smoke-test"
 
 
 class InvocationError(ValueError):
@@ -36,6 +37,13 @@ def parse_invocation(arguments: Sequence[str]) -> Invocation:
         return Invocation(LaunchMode.PACKAGE_SMOKE_TEST)
     if args == ["--package-smoke-test", "--allow-missing-bundled-tools"]:
         return Invocation(LaunchMode.PACKAGE_SMOKE_TEST, allow_missing_bundled_tools=True)
+
+    if (
+        len(args) == 3
+        and args[0] == "--config"
+        and args[2] == "--portableapps-smoke-test"
+    ):
+        return Invocation(LaunchMode.PORTABLEAPPS_SMOKE_TEST, args[1])
 
     if args[0] == "--settings":
         if len(args) == 2 and not args[1].startswith("--"):

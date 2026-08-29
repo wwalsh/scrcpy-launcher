@@ -2,7 +2,7 @@ Project website: https://scrcpy-launcher.link/
 
 # scrcpy-launcher user guide
 
-This guide covers the installed and portable Windows editions. For the shortest
+This guide covers the installed, simple portable, and PortableApps.com Windows editions. For the shortest
 path to a working session, start with the
 [README quick start](../README.md#five-minute-quick-start).
 
@@ -35,6 +35,15 @@ overwrite configuration.
 The portable ZIP contains `portable.marker` and `default-config.json`. On first
 launch it creates `config.json` beside `scrcpy-launcher.exe`. Keep the whole
 extracted directory together and use a location where the current user can write.
+
+### PortableApps.com edition
+
+Install the `.paf.exe` into a PortableApps directory and launch
+`scrcpy-launcherPortable.exe` or use the PortableApps Platform menu. Application
+files are under `App`, while configuration and logs are under `Data`. The
+PortableApps.com installer preserves `Data` during upgrades. Windows autostart
+is intentionally unavailable in this edition because the PortableApps Platform
+controls portable application startup.
 
 ### Source edition
 
@@ -225,7 +234,7 @@ background so configured sessions remain available. If a newer stable release
 exists, the launcher can open its GitHub Release page in the default browser.
 
 The update checker never downloads, installs, or executes a release. Download
-the desired installer or portable ZIP yourself and verify its matching SHA-256
+the desired Windows installer, portable ZIP, or PortableApps `.paf.exe` yourself and verify its matching SHA-256
 file before use. Network failures are nonfatal and do not change configuration.
 
 No update check runs automatically or at startup. A manual check sends only a
@@ -249,7 +258,9 @@ known launcher data while preserving unknown files in those folders.
 
 User-facing startup, Settings, configuration, and scrcpy failures appear in
 Windows dialogs. If scrcpy exits unsuccessfully, the full captured diagnostic is
-shown interactively; persistent logs retain the exit code without third-party
+shown interactively when the session fails during startup. Once the scrcpy window
+has opened, runtime exits such as device disconnections are logged without an
+additional dialog. Persistent logs retain the exit code without third-party
 stderr.
 
 ```text

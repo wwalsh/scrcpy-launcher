@@ -43,6 +43,9 @@ def main() -> int:
             require_bundled_tools=not invocation.allow_missing_bundled_tools
         )
 
+    if invocation.mode is LaunchMode.PORTABLEAPPS_SMOKE_TEST:
+        return _portableapps_smoke_test(invocation.config_path)
+
     log_path = setup_logging("tray")
     instance = SingleInstance()
     try:
@@ -70,17 +73,16 @@ def main() -> int:
 
 def _run(log_path: Path, explicit_config_path: str | None = None) -> int:
     config_path = resolve_config_path(explicit_config_path)
-    if explicit_config_path is None:
-        try:
-            if seed_portable_config(config_path):
-                logger.info("Created first-run portable configuration")
-        except PortableConfigError as exc:
-            logger.exception("Could not create portable configuration")
-            show_error(
-                "scrcpy-launcher Portable Configuration Error",
-                f"{exc}\n\nThe launcher was not started.\n\nLog: {log_path}",
-            )
-            return 1
+    try:
+        if seed_portable_config(config_path):
+            logger.info("Created first-run portable configuration")
+    except PortableConfigError as exc:
+        logger.exception("Could not create portable configuration")
+        show_error(
+            "scrcpy-launcher Portable Configuration Error",
+            f"{exc}\n\nThe launcher was not started.\n\nLog: {log_path}",
+        )
+        return 1
     config = _load_startup_config(config_path, log_path)
     if config is None:
         return 1
@@ -175,6 +177,51 @@ def _package_smoke_test(*, require_bundled_tools: bool = True) -> int:
             validate_bundled_installation()
         return 0
     except Exception:
+        return 1
+
+
+def _portableapps_smoke_test(explicit_config_path: str | None) -> int:
+    """Verify the frozen app is isolated by the real PortableApps.com launcher."""
+    from .autostart import AutostartUnavailableError, create_autostart_manager
+    from .paths import portableapps_data_dir
+    from .runtime import is_frozen
+
+    log_path = setup_logging("portableapps-smoke")
+    try:
+        if not is_frozen():
+            raise RuntimeError("PortableApps smoke testing requires a frozen build")
+        data_dir = portableapps_data_dir()
+        if data_dir is None:
+            raise RuntimeError("The PortableApps data environment was not supplied")
+
+        package_root = Path(sys.executable).resolve().parent.parent.parent
+        if data_dir != (package_root / "Data").resolve():
+            raise RuntimeError("The PortableApps data directory escapes the package root")
+
+        config_path = resolve_config_path(explicit_config_path)
+        expected_config = data_dir / "config.json"
+        if config_path != expected_config:
+            raise RuntimeError("The configuration path is outside PortableApps Data")
+        if log_path.parent != data_dir / "logs":
+            raise RuntimeError("The log path is outside PortableApps Data")
+
+        if seed_portable_config(config_path):
+            logger.info("Created PortableApps smoke-test configuration")
+        config = load_config(config_path)
+        if config.config_path != expected_config:
+            raise RuntimeError("The loaded configuration path is not portable")
+
+        try:
+            create_autostart_manager(config_path)
+        except AutostartUnavailableError:
+            pass
+        else:
+            raise RuntimeError("Windows autostart is available in PortableApps mode")
+
+        logger.info("PortableApps launcher integration smoke test passed")
+        return 0
+    except Exception:
+        logger.exception("PortableApps launcher integration smoke test failed")
         return 1
 
 

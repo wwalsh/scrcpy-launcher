@@ -1,6 +1,7 @@
 # Windows release lifecycle test
 
-Use this checklist for every installer/portable release. Test with production
+Use this checklist for every Windows installer, simple portable ZIP, and
+PortableApps.com release. Test with production
 artifacts from `dist\artifacts`, not the PyInstaller staging directory. Preserve a
 copy of any real configuration before testing.
 
@@ -67,7 +68,9 @@ The release build verifies that:
   `portable.marker` and `default-config.json`;
 - the portable ZIP does not contain `config.json` or its backup;
 - the bundled scrcpy metadata, required files, and hashes are valid;
-- the installer is a nonempty Windows executable.
+- both installers are nonempty Windows executables;
+- the `.paf.exe` payload passes archive-integrity checks, contains the required
+  launcher and application files, and contains no user `Data` directory.
 
 Run a release build before the manual matrix. Use `-OfflineDependencies` only
 when the verified cache is already populated:
@@ -91,6 +94,8 @@ are obvious. Quit the tray before running Setup or Uninstall.
 | Full uninstall | Reinstall, uninstall, and answer **Yes** | Application files, config, backups, recovery archives, and logs are removed |
 | Portable first run | Extract the ZIP into a new folder and launch it | Adjacent `config.json` is created in bundled mode; AppData config is untouched |
 | Portable upgrade | Edit adjacent `config.json`, then extract a newer ZIP over the folder | Adjacent config is byte-for-byte unchanged and the new application launches |
+| PortableApps first run | Install the `.paf.exe` into a new PortableApps directory and launch it | `Data\config.json` is created in bundled mode; installed and simple-portable configs are untouched |
+| PortableApps upgrade | Add a distinctive session, quit the tray, then install the same or newer `.paf.exe` to the same directory | The session and `Data\config.json` are preserved and the updated application launches |
 | Side-by-side | Run installed and portable editions separately | Installed edition uses AppData; portable edition uses only its adjacent config |
 | Explorer restart | With the tray running, restart **Windows Explorer** twice from Task Manager | The icon returns once after each restart; its menu, Settings, and Quit remain responsive |
 
@@ -114,7 +119,14 @@ Portable configuration:
 <portable folder>\config.json
 ```
 
+PortableApps.com configuration:
+
+```text
+<PortableApps folder>\scrcpy-launcherPortable\Data\config.json
+```
+
 The installer intentionally preserves installed configuration during upgrades
 and same-version reinstalls. A portable upgrade is safe because release ZIPs
-never contain `config.json`. Uninstall only removes user data after an explicit
+never contain `config.json`. PortableApps.com upgrades preserve the package's
+`Data` directory. Uninstall only removes user data after an explicit
 confirmation; silent uninstall defaults to preserving it.

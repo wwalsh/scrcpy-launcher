@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.logging_setup import log_path_for, redact_log_message, setup_logging
+from src.paths import PORTABLEAPPS_DATA_ENV
 
 
 class LoggingSetupTests(unittest.TestCase):
@@ -37,6 +38,27 @@ class LoggingSetupTests(unittest.TestCase):
             for handler in handlers:
                 root.removeHandler(handler)
                 handler.close()
+
+    def test_portableapps_logs_are_stored_under_data(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            "os.environ", {PORTABLEAPPS_DATA_ENV: directory}
+        ), patch("src.paths.sys.frozen", True, create=True):
+            path = log_path_for("tray")
+
+        self.assertEqual(path, Path(directory).resolve() / "logs" / "tray.log")
+
+    def test_portableapps_logging_does_not_fall_back_to_host_temp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.dict(
+            "os.environ", {PORTABLEAPPS_DATA_ENV: directory}
+        ), patch("src.paths.sys.frozen", True, create=True), patch(
+            "src.logging_setup.Path.mkdir", side_effect=OSError("read only")
+        ), patch("src.logging_setup.RotatingFileHandler") as file_handler, patch(
+            "src.logging_setup.sys.stderr", None
+        ):
+            path = setup_logging("tray")
+
+        self.assertEqual(path, Path(directory).resolve() / "logs" / "tray.log")
+        file_handler.assert_not_called()
 
     def test_redacts_profile_paths_and_device_serials(self) -> None:
         message = (

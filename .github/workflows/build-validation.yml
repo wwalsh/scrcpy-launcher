@@ -31,7 +31,7 @@ jobs:
 
       - name: Build and verify portable distribution
         shell: pwsh
-        run: .\packaging\build.ps1 -SkipInstaller
+        run: .\packaging\build.ps1 -SkipInstaller -SkipPortableApps
 
       - name: Upload validated build artifacts
         uses: actions/upload-artifact@v6

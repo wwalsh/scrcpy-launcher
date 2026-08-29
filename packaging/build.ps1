@@ -2,7 +2,10 @@
 
 param(
     [switch]$SkipInstaller,
+    [switch]$SkipPortableApps,
     [string]$NsisCompiler,
+    [string]$PortableAppsLauncherGenerator,
+    [string]$PortableAppsInstaller,
     [string]$DependencyCache,
     [switch]$OfflineDependencies,
     [switch]$SkipBundledTools
@@ -18,8 +21,8 @@ $resolvedDependencyCache = if ($DependencyCache) {
     Join-Path $projectRoot ".cache\dependencies"
 }
 
-if ($SkipBundledTools -and -not $SkipInstaller) {
-    throw "-SkipBundledTools creates a developer-only package and must be combined with -SkipInstaller."
+if ($SkipBundledTools -and (-not $SkipInstaller -or -not $SkipPortableApps)) {
+    throw "-SkipBundledTools creates a developer-only package and must be combined with -SkipInstaller and -SkipPortableApps."
 }
 
 function Invoke-Checked {
@@ -158,6 +161,25 @@ try {
         } "NSIS"
     }
 
+    if (-not $SkipPortableApps) {
+        $portableAppsArguments = @{
+            PackageDirectory = $packageDirectory
+            ArtifactDirectory = $artifactDirectory
+            CreateInstaller = $true
+        }
+        if ($PortableAppsLauncherGenerator) {
+            $portableAppsArguments.LauncherGenerator = $PortableAppsLauncherGenerator
+        }
+        if ($PortableAppsInstaller) {
+            $portableAppsArguments.PortableAppsInstaller = $PortableAppsInstaller
+        }
+        & (Join-Path $PSScriptRoot "build_portableapps_launcher.ps1") @portableAppsArguments
+        if ($LASTEXITCODE -ne 0) {
+            throw "PortableApps package build failed with exit code $LASTEXITCODE"
+        }
+        $portableAppsArtifact = Join-Path $artifactDirectory "scrcpy-launcherPortable_${appVersion}_English.paf.exe"
+    }
+
     $verificationArguments = @(
         "packaging\verify_release.py",
         "--package-dir", $packageDirectory,
@@ -165,6 +187,9 @@ try {
     )
     if (-not $SkipInstaller) {
         $verificationArguments += @("--installer", $installerPath)
+    }
+    if (-not $SkipPortableApps) {
+        $verificationArguments += @("--portableapps-installer", $portableAppsArtifact)
     }
     if ($SkipBundledTools) {
         $verificationArguments += "--allow-missing-bundled-tools"

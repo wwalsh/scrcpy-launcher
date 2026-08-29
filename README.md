@@ -31,6 +31,7 @@ files can be used to verify downloaded artifacts.
 | --- | --- | --- |
 | Installer | Normal use with Start-menu integration and optional Windows autostart | `%APPDATA%\scrcpy-launcher\config.json` |
 | Portable ZIP | Keeping the application and configuration together or carrying it between PCs | `config.json` beside `scrcpy-launcher.exe` |
+| PortableApps.com | PortableApps Platform integration and upgrades that preserve user data | `Data\config.json` inside `scrcpy-launcherPortable` |
 | Source | Development and testing | `config.json` in the working directory by default |
 
 ## Five-minute quick start
@@ -109,6 +110,12 @@ bundled scrcpy runtime.
 To upgrade, quit the tray and extract the newer ZIP over the existing portable
 folder. Release ZIPs do not contain `config.json`, so the adjacent configuration
 is preserved. Installed and portable editions use independent configurations.
+
+For the PortableApps.com edition, run the release's `.paf.exe` and choose your
+PortableApps directory. Start **scrcpy-launcher Portable** from the platform or
+run `scrcpy-launcherPortable.exe`. Its configuration and logs stay under the
+package's `Data` directory. Installing a newer `.paf.exe` over the same package
+preserves that directory.
 
 ## Common Settings tasks
 

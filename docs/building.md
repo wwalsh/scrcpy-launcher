@@ -8,6 +8,8 @@ portable users should start with the [README](../README.md).
 - Windows 11
 - Python 3.10 or newer
 - NSIS 3 for installer builds
+- PortableApps.com Launcher 2.2.9 or newer
+- PortableApps.com Installer 3.9.18 or newer
 - Network access for the first bundled-dependency staging run, or a populated
   offline dependency cache
 
@@ -93,6 +95,10 @@ NSIS may be installed normally or through PortableApps. The build searches
 `NSIS_HOME`, `PATH`, the current user's standard PortableApps location, and the
 standard Program Files locations. An explicit compiler can be supplied.
 
+The PortableApps tools are discovered in the current user's standard
+`PortableApps` directory or through `PORTABLEAPPS_LAUNCHER_HOME` and
+`PORTABLEAPPS_INSTALLER_HOME`. Explicit executable paths may also be supplied.
+
 ## Release build
 
 ```powershell
@@ -106,6 +112,14 @@ Or select NSIS explicitly:
   -NsisCompiler "C:\path\to\makensis.exe"
 ```
 
+PortableApps tools can also be selected explicitly:
+
+```powershell
+.\packaging\build.ps1 `
+  -PortableAppsLauncherGenerator "C:\path\to\PortableApps.comLauncherGenerator.exe" `
+  -PortableAppsInstaller "C:\path\to\PortableApps.comInstaller.exe"
+```
+
 The build:
 
 1. validates dependency policy;
@@ -113,9 +127,10 @@ The build:
 3. creates the PyInstaller one-folder application;
 4. acquires and verifies the pinned scrcpy bundle and source artifacts;
 5. runs the packaged smoke test;
-6. creates portable and NSIS packages;
-7. verifies package inventories and installed/portable isolation; and
-8. writes SHA-256 files under `dist\artifacts`.
+6. creates the Windows installer, simple portable ZIP, and PortableApps `.paf.exe`;
+7. verifies the `.paf.exe` archive integrity, required payload, and absence of user `Data`;
+8. verifies package inventories and installed/portable isolation; and
+9. writes SHA-256 files under `dist\artifacts`.
 
 Downloads are cached under `.cache\dependencies`. Use an alternate or offline
 cache with:
@@ -126,16 +141,17 @@ cache with:
   -OfflineDependencies
 ```
 
-Build only the portable package when NSIS is unavailable:
+Developer builds may omit the Windows installer or PortableApps package:
 
 ```powershell
 .\packaging\build.ps1 -SkipInstaller
+.\packaging\build.ps1 -SkipPortableApps
 ```
 
 Create a developer-only unbundled package with:
 
 ```powershell
-.\packaging\build.ps1 -SkipInstaller -SkipBundledTools
+.\packaging\build.ps1 -SkipInstaller -SkipPortableApps -SkipBundledTools
 ```
 
 An unbundled package is explicitly named `unbundled` and is not a release.
@@ -175,8 +191,11 @@ byte-for-byte reproducible builds across independent environments.
   website's current-release and What's New text.
 - Refresh dependency review records when required.
 - Run the complete build.
+- Manually install the `.paf.exe`, create or edit a session, then install it
+  again to the same PortableApps directory and confirm `Data\config.json` is
+  preserved.
 - Follow [windows-lifecycle-test.md](windows-lifecycle-test.md).
-- Confirm the installer and portable hashes.
+- Confirm hashes for the Windows installer, simple portable ZIP, and PortableApps `.paf.exe`.
 - Inspect the working tree for personal configuration and generated reports.
 - Use the matching changelog entry as the basis for reviewed GitHub release
   notes.

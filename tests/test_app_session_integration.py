@@ -136,7 +136,7 @@ class AppSessionIntegrationTests(unittest.TestCase):
                 popen.call_args.args[0],
                 [reloaded.scrcpy_path, *selected_args],
             )
-            thread.return_value.start.assert_called_once_with()
+            self.assertEqual(thread.return_value.start.call_count, 2)
 
 
 if __name__ == "__main__":
