@@ -170,6 +170,21 @@ Scheduled GitHub Actions and Dependabot provide hosted monitoring. In addition:
 The release build fails when the native review is stale, incomplete, marked
 `update-required`, or no longer exactly matches the bundle manifest.
 
+## Public CI build validation
+
+The public GitHub Actions workflow at
+`.github/workflows/build-validation.yml` runs on Windows for pushes to `main`,
+pull requests, and manual dispatches.
+
+It installs the exact hash-locked build dependencies, runs the version-controlled
+release build in portable mode, executes the same automated verification gates,
+and uploads the resulting `dist/artifacts` directory as a GitHub Actions
+artifact named for the source commit SHA.
+
+This provides a public, reviewable source-to-artifact build path. It is intended
+to demonstrate repeatability and provenance; it is not currently a claim of
+byte-for-byte reproducible builds across independent environments.
+
 ## Release checklist
 
 - Update `src/version.py`, the NSIS fallback version, `CHANGELOG.md`, and the
@@ -184,6 +199,10 @@ The release build fails when the native review is stale, incomplete, marked
 - Inspect the working tree for personal configuration and generated reports.
 - Use the matching changelog entry as the basis for reviewed GitHub release
   notes.
+- Include a **Code signing policy** link in GitHub release notes. Until SignPath
+  approval and integration are complete, state clearly that the release is
+  unsigned. After signing is enabled, identify the signed artifacts accurately
+  and link to [docs/code-signing-policy.md](code-signing-policy.md).
 - Create the release commit and annotated tag only after acceptance.
 
 Authenticode signing is not currently part of the release process.

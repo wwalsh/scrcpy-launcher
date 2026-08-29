@@ -16,6 +16,15 @@ window layout, or use case.
 The packaged application includes verified copies of scrcpy 4.1 and ADB. An
 installed or portable user does not need Python or a separate scrcpy download.
 
+## Download
+
+Official installer and portable releases are published on the
+[GitHub Releases page](https://github.com/wwalsh/scrcpy-launcher/releases).
+
+Download release artifacts only from the official project repository or the
+project website at https://scrcpy-launcher.link/. Published SHA-256 checksum
+files can be used to verify downloaded artifacts.
+
 ## Choose an edition
 
 | Edition | Best for | Configuration location |
@@ -168,20 +177,70 @@ Open **Windows Settings > Apps > Installed apps**, find **scrcpy-launcher**, and
 backups, recovery archives, and logs. Choose **No** to retain them for a future
 installation. Silent uninstall preserves user data.
 
+## Build provenance
+
+The repository includes a public Windows GitHub Actions build-validation
+workflow. It builds from the checked-out source revision using the project's
+version-controlled build script, exact hash-locked Python dependencies, pinned
+bundled-component manifests, automated tests, release verification, and
+SHA-256 artifact generation.
+
+Each CI artifact is associated with the Git commit that produced it. The project
+therefore provides a public, reviewable source-to-binary provenance path, while
+not claiming byte-for-byte reproducibility across independent build
+environments.
+
+## Code signing policy
+
+scrcpy-launcher is preparing an application to the SignPath Foundation open-source code-signing program. Existing releases are not currently Authenticode signed.
+
+**Free code signing provided by SignPath.io, certificate by SignPath Foundation.**
+
+The project is currently maintained by **William Walsh (`@wwalsh`)**, who acts as the current committer, reviewer, and signing approver. External contributions require maintainer review before inclusion in an official release, and repository/signing administration accounts must use multi-factor authentication.
+
+scrcpy-launcher does not collect telemetry or automatically send configuration, session, device, or application-inventory data to the maintainer. The only built-in Internet request is the user-initiated **Check for updates** action described above.
+
+See the [code signing policy](docs/code-signing-policy.md) for eligible artifacts, trusted-build requirements, signing approval, third-party component handling, privacy, and incident response.
+
 ## Documentation
 
 - [User guide](docs/user-guide.md)
 - [Building and testing](docs/building.md)
 - [Windows release lifecycle test](docs/windows-lifecycle-test.md)
 - [Security policy](SECURITY.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Contributing](CONTRIBUTING.md)
 - [Security model and accepted risks](docs/security-model.md)
 - [Third-party notices](THIRD-PARTY-NOTICES.md)
 
-## Development summary
+## Build from source
 
-Source development requires Windows 11, Python 3.10 or newer, and the locked
-dependencies in `requirements.txt`. See [docs/building.md](docs/building.md) for
-source setup, architecture, tests, dependency review, and release packaging.
+Building scrcpy-launcher requires Windows 11, Python 3.10 or newer, and NSIS 3
+for installer builds.
+
+From PowerShell in the repository, create a virtual environment and install the
+exact, hash-locked build dependencies:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --require-hashes -r requirements-build.txt
+```
+
+Run the complete release build with:
+
+```powershell
+.\packaging\build.ps1
+```
+
+The build validates dependency policy, runs the automated tests, builds the
+application, stages and verifies the pinned scrcpy runtime, creates the portable
+and installer packages, verifies the resulting artifacts, and writes SHA-256
+checksum files under `dist\artifacts`.
+
+For development setup, testing commands, offline dependency caching, NSIS
+configuration, and the full release procedure, see
+[Building and testing](docs/building.md).
 
 ## License
 

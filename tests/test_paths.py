@@ -60,7 +60,7 @@ class PathTests(unittest.TestCase):
 
             result = resolve_config_path(frozen=True, executable=executable)
 
-            self.assertEqual(result, root / "config.json")
+            self.assertEqual(result, (root / "config.json").resolve())
 
     def test_portableapps_package_uses_launcher_data_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory, patch.dict(
