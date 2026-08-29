@@ -44,7 +44,7 @@ SHA-256, complete file inventory, and per-file hashes. The generated
 | scrcpy client and `scrcpy-server` 4.1 | `scrcpy.exe`, `scrcpy-server`, scripts and images | Apache-2.0 | <https://github.com/Genymobile/scrcpy/tree/v4.1>; see `tools/scrcpy/LICENSE.txt` and `licenses/Apache-2.0.txt`. |
 | Android SDK Platform-Tools 37.0.0 | `adb.exe`, `AdbWinApi.dll`, `AdbWinUsbApi.dll` | Apache-2.0 and notices identified by the upstream distribution | <https://android.googlesource.com/platform/packages/modules/adb/>; see `licenses/Apache-2.0.txt` and generated `licenses/Android-Platform-Tools-NOTICE.txt`. |
 | FFmpeg 8.1.2 | `avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, `swresample-6.dll` | LGPL-2.1-or-later for the configuration used by scrcpy | <https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz>; see generated `licenses/FFmpeg-LGPL-2.1.txt`. The verified source archive is published beside release artifacts. |
-| dav1d 1.5.3 | Statically linked AV1 decoder used by the FFmpeg libraries | BSD-2-Clause | <https://code.videolan.org/videolan/dav1d/-/tree/1.5.3>; see generated `licenses/dav1d-BSD-2-Clause.txt`. The verified source archive is published beside release artifacts. |
+| dav1d 1.5.3 | Statically linked AV1 decoder used by the FFmpeg libraries | BSD-2-Clause | <https://code.videolan.org/videolan/dav1d/-/tree/1.5.3>; see `licenses/dav1d-BSD-2-Clause.txt`. |
 | SDL 3.4.12 | `SDL3.dll` | Zlib | <https://github.com/libsdl-org/SDL/tree/release-3.4.12>; see generated `licenses/SDL-Zlib.txt`. The verified source archive is published beside release artifacts. |
 | libusb 1.0.30 | `libusb-1.0.dll` | LGPL-2.1-or-later | <https://github.com/libusb/libusb/tree/v1.0.30>; see generated `licenses/libusb-LGPL-2.1.txt`. The verified source archive is published beside release artifacts. |
 | zlib | Statically linked compression support in the FFmpeg build | Zlib | <https://zlib.net/>; see `licenses/Zlib.txt`. |
@@ -77,7 +77,7 @@ installer with scrcpy-launcher.
 The corresponding source for scrcpy-launcher is the source tree and tagged
 source archive published with each binary release. Upstream source locations for
 separately licensed components are listed above. The exact source archives used
-for FFmpeg, libusb, dav1d, and SDL are copied to `dist/artifacts/sources` with
+for FFmpeg, libusb, and SDL are copied to `dist/artifacts/sources` with
 SHA-256 sidecars by a release build. The verified Platform-Tools archive is
 included there to preserve its complete upstream NOTICE material and binary
 provenance. Exact URLs and hashes are recorded in `SOURCE-METADATA.json` and the

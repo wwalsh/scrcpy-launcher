@@ -125,7 +125,7 @@ The build:
 1. validates dependency policy;
 2. runs the automated tests;
 3. creates the PyInstaller one-folder application;
-4. acquires and verifies the pinned scrcpy bundle and source artifacts;
+4. acquires and verifies the pinned scrcpy bundle and required source artifacts;
 5. runs the packaged smoke test;
 6. creates the Windows installer, simple portable ZIP, and PortableApps `.paf.exe`;
 7. verifies the `.paf.exe` archive integrity, required payload, and absence of user `Data`;

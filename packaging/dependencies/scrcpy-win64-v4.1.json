@@ -92,14 +92,6 @@
       "license_output": "libusb-LGPL-2.1.txt"
     },
     {
-      "name": "dav1d",
-      "filename": "dav1d-1.5.3.tar.gz",
-      "url": "https://code.videolan.org/videolan/dav1d/-/archive/1.5.3/dav1d-1.5.3.tar.gz",
-      "sha256": "cbe212b02faf8c6eed5b6d55ef8a6e363aaab83f15112e960701a9c3df813686",
-      "license_member": "dav1d-1.5.3/COPYING",
-      "license_output": "dav1d-BSD-2-Clause.txt"
-    },
-    {
       "name": "SDL",
       "filename": "SDL-release-3.4.12.tar.gz",
       "url": "https://github.com/libsdl-org/SDL/archive/refs/tags/release-3.4.12.tar.gz",
