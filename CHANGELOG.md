@@ -5,6 +5,13 @@ All notable changes to the public scrcpy-launcher releases are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-08-28
+
+### Added
+
+- Added tray actions to stop all launcher-managed scrcpy sessions and stop the
+  selected ADB server before maintenance or updates.
+
 ## [0.7.4] - 2026-08-28
 
 ### Fixed
@@ -59,6 +66,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   dependency controls, bundled-runtime integrity verification, targeted log
   redaction, and hardened installer cleanup.
 
+[0.7.5]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.1...v0.7.2
