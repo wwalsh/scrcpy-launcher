@@ -21,14 +21,15 @@ VALUE_NAME = "scrcpy-launcher"
 
 
 class AutostartError(Exception):
-    pass
+    """Base error for Windows autostart registration failures."""
 
 
 class AutostartUnavailableError(AutostartError):
-    pass
+    """Raised when the current runtime cannot manage Windows autostart."""
 
 
 class AutostartStatus(Enum):
+    """States reported for the current-user launcher registration."""
     DISABLED = "disabled"
     ENABLED = "enabled"
     STALE = "stale"
@@ -36,6 +37,7 @@ class AutostartStatus(Enum):
 
 @dataclass(frozen=True)
 class AutostartState:
+    """Snapshot of the expected and registered autostart commands."""
     status: AutostartStatus
     expected_command: str
     registered_command: str | None
@@ -50,9 +52,11 @@ class AutostartManager:
 
     @property
     def expected_command(self) -> str:
+        """Return the command this installation should register at sign-in."""
         return f'"{self._executable}" --config "{self._config_path}"'
 
     def state(self) -> AutostartState:
+        """Inspect the current-user Run entry without modifying the registry."""
         registered = _read_registration()
         if registered is None:
             status = AutostartStatus.DISABLED
@@ -63,14 +67,17 @@ class AutostartManager:
         return AutostartState(status, self.expected_command, registered)
 
     def enable(self) -> None:
+        """Register this installation to start at the user's Windows sign-in."""
         _write_registration(self.expected_command)
         logger.info("Enabled Windows autostart")
 
     def disable(self) -> None:
+        """Remove only this launcher's current-user autostart registration."""
         _delete_registration()
         logger.info("Disabled Windows autostart")
 
     def apply(self, enabled: bool) -> None:
+        """Enable or disable autostart according to the requested setting."""
         if enabled:
             self.enable()
         else:

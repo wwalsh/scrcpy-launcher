@@ -26,6 +26,7 @@ class ScrcpyResolutionError(RuntimeError):
 
 @dataclass(frozen=True)
 class ScrcpyResolution:
+    """Resolved scrcpy executable, selection mode, and user-facing description."""
     path: Path
     mode: str
     description: str
@@ -43,6 +44,7 @@ def application_root(
 
 
 def bundled_scrcpy_path(*, root: Path | str | None = None) -> Path:
+    """Return the bundled ``scrcpy.exe`` path under an application root."""
     base = Path(root).resolve() if root is not None else application_root()
     return base / BUNDLED_RELATIVE_PATH
 

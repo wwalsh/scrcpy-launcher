@@ -38,6 +38,7 @@ class PrivacyFormatter(logging.Formatter):
     """Apply privacy redaction after formatting, including exception tracebacks."""
 
     def format(self, record: logging.LogRecord) -> str:
+        """Format a record after applying the project's privacy redaction."""
         return redact_log_message(super().format(record))
 
 

@@ -11,11 +11,13 @@ from pathlib import Path
 
 
 class DeviceDiscoveryError(Exception):
+    """Raised when ADB device discovery cannot complete."""
     pass
 
 
 @dataclass(frozen=True)
 class Device:
+    """A connected Android device identified by its ADB serial and state."""
     serial: str
     state: str
     model: str = ""
@@ -24,6 +26,7 @@ class Device:
 
     @property
     def label(self) -> str:
+        """Return the serial and connection state shown in device selectors."""
         raw_name = (self.model or self.product or "Android device").replace("_", " ")
         name = " ".join(raw_name.split())
         return f"{name} — {self.serial}"

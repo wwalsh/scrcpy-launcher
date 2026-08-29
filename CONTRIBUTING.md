@@ -124,3 +124,14 @@ official release.
 
 All accounts used for repository administration and code-signing approval must
 use multi-factor authentication.
+## Documentation expectations
+
+Public Python APIs must have accurate docstrings describing their inputs,
+outputs, exceptions, and externally visible side effects. Add rationale
+comments for non-obvious Windows, process, security, concurrency, or recovery
+behavior. Do not add comments that merely restate the code.
+
+Changes to configuration, packaging, security controls, or tray behavior must
+update the corresponding user or maintainer documentation. See
+[`docs/code-documentation.md`](docs/code-documentation.md) for the project
+standard.
