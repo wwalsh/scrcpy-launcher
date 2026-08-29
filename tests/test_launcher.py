@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 import sys
+import subprocess
 from unittest.mock import Mock, patch
 
 from src.launcher import (
@@ -99,6 +100,43 @@ class LauncherTests(unittest.TestCase):
         manager._monitor(process, callback, _StartupState())
 
         callback.assert_not_called()
+
+    def test_stop_all_terminates_active_processes(self) -> None:
+        manager = _ProcessManager()
+        first = Mock()
+        second = Mock()
+        first.poll.return_value = None
+        second.poll.return_value = None
+        manager._processes.extend([first, second])
+
+        self.assertEqual(manager.stop_all(), 2)
+        first.terminate.assert_called_once_with()
+        second.terminate.assert_called_once_with()
+        first.wait.assert_called_once()
+        second.wait.assert_called_once()
+
+    @patch("src.launcher.SESSION_STOP_TIMEOUT_SECONDS", 0)
+    def test_stop_all_kills_process_that_does_not_exit(self) -> None:
+        manager = _ProcessManager()
+        process = Mock()
+        process.poll.return_value = None
+        process.wait.side_effect = [subprocess.TimeoutExpired("scrcpy", 0), None]
+        manager._processes.append(process)
+
+        self.assertEqual(manager.stop_all(), 1)
+        process.terminate.assert_called_once_with()
+        process.kill.assert_called_once_with()
+
+    @patch("src.launcher.subprocess.run")
+    def test_stop_adb_server_runs_hidden_kill_server_command(self, run) -> None:
+        from src.launcher import stop_adb_server
+
+        run.return_value.returncode = 0
+
+        self.assertTrue(stop_adb_server("C:/tools/adb.exe"))
+        self.assertEqual(run.call_args.args[0], ["C:/tools/adb.exe", "kill-server"])
+        self.assertEqual(run.call_args.kwargs["timeout"], 5.0)
+        self.assertEqual(run.call_args.kwargs["creationflags"], getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0))
 
 
 if __name__ == "__main__":

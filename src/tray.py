@@ -7,14 +7,22 @@ from __future__ import annotations
 import ctypes
 import ctypes.wintypes as w
 import logging
+import shutil
 import subprocess
 import threading
+from pathlib import Path
 import win32con
 import win32gui
 
 from .bundled_manifest import BUNDLED_SCRCPY_VERSION
 from .config import Config, ConfigError, Session, load_config
-from .launcher import SessionLaunchError, launch_session
+from .launcher import (
+    SessionLaunchError,
+    active_session_count,
+    launch_session,
+    stop_adb_server,
+    stop_all_sessions,
+)
 from .project_links import LATEST_RELEASE_URL, REPOSITORY_URL
 from .runtime import resource_path, settings_launch_spec
 from .scrcpy_runtime import ScrcpyResolutionError, resolve_scrcpy
@@ -179,12 +187,27 @@ def _show_menu(hwnd: int) -> None:
 
     win32gui.AppendMenu(hmenu, win32con.MF_SEPARATOR, 0, "")
     session_count = len(_state.sessions)
-    settings_id = session_count + 1
-    update_id = session_count + 2
-    about_id = session_count + 3
-    quit_id = session_count + 4
+    stop_sessions_id = session_count + 1
+    stop_adb_id = session_count + 2
+    settings_id = session_count + 3
+    update_id = session_count + 4
+    about_id = session_count + 5
+    quit_id = session_count + 6
     settings_flags, settings_label, quit_flags, quit_label = _settings_menu_state()
     update_flags, update_label = _update_menu_state()
+    stop_sessions_flags = (
+        win32con.MF_STRING
+        if active_session_count()
+        else win32con.MF_STRING | win32con.MF_GRAYED
+    )
+    stop_adb_flags = (
+        win32con.MF_STRING
+        if _resolve_adb_path(_state) is not None
+        else win32con.MF_STRING | win32con.MF_GRAYED
+    )
+    win32gui.AppendMenu(hmenu, stop_sessions_flags, stop_sessions_id, "Stop all scrcpy sessions")
+    win32gui.AppendMenu(hmenu, stop_adb_flags, stop_adb_id, "Stop ADB server")
+    win32gui.AppendMenu(hmenu, win32con.MF_SEPARATOR, 0, "")
     win32gui.AppendMenu(hmenu, settings_flags, settings_id, settings_label)
     win32gui.AppendMenu(hmenu, update_flags, update_id, update_label)
     win32gui.AppendMenu(hmenu, win32con.MF_STRING, about_id, "About scrcpy-launcher")
@@ -203,6 +226,12 @@ def _show_menu(hwnd: int) -> None:
         if _settings_is_open():
             return
         win32gui.PostQuitMessage(0)
+        return
+    elif cmd == stop_sessions_id:
+        _stop_all_sessions()
+        return
+    elif cmd == stop_adb_id:
+        _stop_adb_server(_state)
         return
     elif cmd == settings_id:
         _spawn_settings_process(str(_state.config_path))
@@ -233,6 +262,35 @@ def _resolve_configured_scrcpy(config: Config, *, report_error: bool) -> str | N
 
 def _log_scrcpy_selection(config: Config) -> None:
     _resolve_configured_scrcpy(config, report_error=False)
+
+
+def _resolve_adb_path(config: Config) -> str | None:
+    """Resolve ADB beside the selected scrcpy executable or from PATH."""
+    scrcpy_path = _resolve_configured_scrcpy(config, report_error=False)
+    if scrcpy_path:
+        adjacent = Path(scrcpy_path).with_name("adb.exe")
+        if adjacent.is_file():
+            return str(adjacent)
+    return shutil.which("adb.exe")
+
+
+def _stop_all_sessions() -> None:
+    stopped = stop_all_sessions()
+    logger.info("Stopped %s launcher-managed scrcpy session(s)", stopped)
+
+
+def _stop_adb_server(config: Config) -> None:
+    choice = ask_yes_no_information(
+        "Stop ADB server",
+        "Stop the ADB server? Other Android tools using ADB may be interrupted.",
+    )
+    if choice is not DialogChoice.YES:
+        return
+    adb_path = _resolve_adb_path(config)
+    if adb_path is None:
+        show_error("ADB Shutdown Failed", "Could not find the configured ADB executable.")
+    elif not stop_adb_server(adb_path):
+        show_error("ADB Shutdown Failed", f"Could not stop the ADB server using:\n\n{adb_path}")
 
 
 def _launch_configured_session(config: Config, session: Session) -> None:

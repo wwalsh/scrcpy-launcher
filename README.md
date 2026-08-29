@@ -90,15 +90,17 @@ the tray icon launches the first session in the list.
 ## Tray controls
 
 - **Left-click:** launch the first configured session.
-- **Right-click:** launch any session, open Settings, check for updates, view
-  About information, or quit.
+- **Right-click:** launch any session, stop launcher-managed sessions, stop the
+  ADB server, open Settings, check for updates, view About information, or quit.
 - The menu reloads saved configuration each time it opens.
 - The tray icon restores itself automatically after Windows Explorer restarts.
 - While a tray-launched Settings window is open, **Settings** and **Quit** are
   disabled to protect unsaved changes. Close Settings first.
 
 scrcpy sessions start without an additional console window. Closing a scrcpy
-window does not quit the launcher; use **Quit** from the tray menu.
+window does not quit the launcher; use **Stop all scrcpy sessions** when you
+need to release all launcher-managed session processes. **Stop ADB server** can
+release ADB files before updating, but may interrupt other Android tools.
 
 ## Portable quick start
 
