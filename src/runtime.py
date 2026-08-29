@@ -10,10 +10,12 @@ from pathlib import Path
 
 
 def is_frozen() -> bool:
+    """Return whether the application is running from a PyInstaller bundle."""
     return bool(getattr(sys, "frozen", False))
 
 
 def resource_path(name: str) -> Path:
+    """Resolve a bundled resource in source and frozen application layouts."""
     """Return a bundled resource path in frozen mode or the repository path in source mode."""
     if is_frozen():
         bundle_root = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
@@ -23,11 +25,13 @@ def resource_path(name: str) -> Path:
 
 @dataclass(frozen=True)
 class ProcessLaunchSpec:
+    """Command and working directory used to launch a child application."""
     command: list[str]
     cwd: str | None
 
 
 def settings_launch_spec(config_path: str) -> ProcessLaunchSpec:
+    """Build the source- or frozen-mode command used to open Settings."""
     """Build the child command used to open the separate Settings process."""
     if is_frozen():
         return ProcessLaunchSpec(

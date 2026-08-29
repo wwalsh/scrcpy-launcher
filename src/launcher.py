@@ -55,7 +55,11 @@ class _StartupState:
 
 
 class _ProcessManager:
-    """Retain and asynchronously monitor launched scrcpy processes."""
+    """Retain and asynchronously monitor launcher-owned scrcpy processes.
+
+    The manager deliberately tracks only processes started through ``launch``;
+    shutdown actions must not terminate unrelated scrcpy instances.
+    """
 
     def __init__(self) -> None:
         self._processes: list[subprocess.Popen[str]] = []
@@ -67,6 +71,7 @@ class _ProcessManager:
         args: Sequence[str],
         on_error: ErrorCallback | None = None,
     ) -> subprocess.Popen[str]:
+        """Start one scrcpy process and attach startup and exit monitors."""
         command = [scrcpy_path, *args]
         try:
             process = subprocess.Popen(
@@ -205,7 +210,11 @@ def stop_all_sessions() -> int:
 
 
 def stop_adb_server(adb_path: str) -> bool:
-    """Stop the ADB server associated with the selected scrcpy installation."""
+    """Stop the ADB server associated with the selected scrcpy installation.
+
+    ADB's server is shared system-wide, so callers must obtain explicit user
+    confirmation before invoking this operation.
+    """
     try:
         completed = subprocess.run(
             [adb_path, "kill-server"],
@@ -234,4 +243,17 @@ def launch_session(
     args: Sequence[str],
     on_error: ErrorCallback | None = None,
 ) -> subprocess.Popen[str]:
+    """Launch and monitor one scrcpy session without opening a console window.
+
+    Args:
+        scrcpy_path: Executable to run.
+        args: Argument vector passed to scrcpy without shell interpretation.
+        on_error: Optional callback for failures detected during startup.
+
+    Returns:
+        The child process object tracked by the launcher.
+
+    Raises:
+        SessionLaunchError: If Windows cannot start the executable.
+    """
     return _manager.launch(scrcpy_path, args, on_error)

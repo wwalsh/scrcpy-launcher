@@ -10,6 +10,7 @@ from typing import Sequence
 
 
 class LaunchMode(Enum):
+    """Supported command-line entry-point modes."""
     TRAY = "tray"
     SETTINGS = "settings"
     PACKAGE_SMOKE_TEST = "package-smoke-test"
@@ -17,11 +18,13 @@ class LaunchMode(Enum):
 
 
 class InvocationError(ValueError):
+    """Raised when command-line arguments do not describe a valid invocation."""
     pass
 
 
 @dataclass(frozen=True)
 class Invocation:
+    """Parsed command-line mode and its optional configuration path."""
     mode: LaunchMode
     config_path: str | None = None
     allow_missing_bundled_tools: bool = False

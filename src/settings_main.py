@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> int:
+    """Run the Settings entry point and return its process exit code."""
     config_path = sys.argv[1] if len(sys.argv) >= 2 else None
     return run_settings(config_path)
 

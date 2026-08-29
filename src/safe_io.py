@@ -14,6 +14,7 @@ MAX_JSON_FILE_BYTES = 5 * 1024 * 1024
 
 
 class InputTooLargeError(ValueError):
+    """Raised when a bounded input exceeds the allowed byte limit."""
     pass
 
 

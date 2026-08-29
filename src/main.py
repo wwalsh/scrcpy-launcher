@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> int:
+    """Run the selected command-line mode and return its process exit code."""
     try:
         invocation = parse_invocation(sys.argv[1:])
     except InvocationError as exc:

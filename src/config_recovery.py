@@ -18,19 +18,20 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigRecoveryError(Exception):
-    pass
+    """Base error for configuration backup inspection and restoration."""
 
 
 class BackupInvalidError(ConfigRecoveryError):
-    pass
+    """Raised when the available configuration backup is invalid."""
 
 
 class BackupRestoreError(ConfigRecoveryError):
-    pass
+    """Raised when a validated backup cannot replace the primary file."""
 
 
 @dataclass(frozen=True)
 class RecoveryInspection:
+    """Report validation results for a primary configuration and its backup."""
     config_path: Path
     primary_error: ConfigError | None
     backup_path: Path
@@ -38,10 +39,12 @@ class RecoveryInspection:
 
     @property
     def primary_valid(self) -> bool:
+        """Return whether the primary configuration passed validation."""
         return self.primary_error is None
 
     @property
     def backup_valid(self) -> bool:
+        """Return whether the backup configuration passed validation."""
         return self.backup_error is None
 
 

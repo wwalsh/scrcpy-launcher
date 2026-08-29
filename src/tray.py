@@ -483,6 +483,7 @@ _tray_icon_handle = 0
 
 
 def run_tray(config: Config) -> None:
+    """Run the native notification-area loop for the supplied configuration."""
     """Create a pywin32 tray icon and run the message loop."""
     global _state, _taskbar_created_message, _tray_title, _tray_icon_handle
 

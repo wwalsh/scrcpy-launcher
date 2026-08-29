@@ -49,31 +49,31 @@ class SessionMergeResult:
 
 
 class ConfigError(Exception):
-    pass
+    """Base error for configuration loading, validation, and persistence."""
 
 
 class ConfigNotFoundError(ConfigError):
-    pass
+    """Raised when the requested configuration file does not exist."""
 
 
 class ConfigJSONError(ConfigError):
-    pass
+    """Raised when configuration content is not valid JSON or UTF-8."""
 
 
 class ConfigReadError(ConfigError):
-    pass
+    """Raised when the configuration cannot be read from disk."""
 
 
 class ConfigValidationError(ConfigError):
-    pass
+    """Raised when configuration values violate the supported schema."""
 
 
 class UnsupportedSchemaVersionError(ConfigError):
-    pass
+    """Raised when a configuration uses a newer unsupported schema version."""
 
 
 class ConfigMigrationError(ConfigError):
-    pass
+    """Raised when a legacy configuration cannot be migrated safely."""
 
 
 class Config:
@@ -245,18 +245,22 @@ class Config:
 
     @property
     def scrcpy_mode(self) -> str:
+        """Return the selected bundled or custom scrcpy mode."""
         return self._scrcpy_mode
 
     @property
     def scrcpy_path(self) -> str:
+        """Return the configured custom scrcpy path."""
         return self._scrcpy_path
 
     @property
     def sessions(self) -> tuple[Session, ...]:
+        """Return saved sessions in their tray-menu order."""
         return self._sessions
 
     @property
     def config_path(self) -> Path:
+        """Return the resolved path of the loaded configuration file."""
         return self._config_path
 
     @property
@@ -266,6 +270,7 @@ class Config:
 
     @property
     def needs_migration_save(self) -> bool:
+        """Return whether loading found legacy data that should be rewritten."""
         return self._source_schema_version != CURRENT_SCHEMA_VERSION
 
     def set_scrcpy_mode(self, value: str) -> None:
@@ -436,10 +441,16 @@ class Config:
 
 
 def load_config(config_path: Path | str = "config.json") -> Config:
+    """Load and validate a configuration from disk.
+
+    Raises:
+        ConfigError: A typed subclass describing missing, invalid, or unreadable data.
+    """
     return Config(config_path)
 
 
 def backup_path_for(config_path: Path | str) -> Path:
+    """Return the adjacent ``.bak`` path used for configuration recovery."""
     path = Path(config_path)
     return path.parent / f"{path.name}.bak"
 

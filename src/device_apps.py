@@ -28,6 +28,7 @@ class AppDiscoveryError(RuntimeError):
 
 @dataclass(frozen=True)
 class DeviceApp:
+    """An Android application reported by scrcpy's application-list command."""
     name: str
     package_name: str
     is_system: bool

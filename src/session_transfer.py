@@ -17,22 +17,27 @@ SESSION_BACKUP_VERSION = 1
 
 
 class SessionTransferError(Exception):
+    """Base error for session backup import and export."""
     pass
 
 
 class SessionBackupReadError(SessionTransferError):
+    """Raised when a session backup cannot be read."""
     pass
 
 
 class SessionBackupValidationError(SessionTransferError):
+    """Raised when session backup contents violate the transfer format."""
     pass
 
 
 class UnsupportedSessionBackupVersionError(SessionBackupValidationError):
+    """Raised when a backup uses a newer unsupported format version."""
     pass
 
 
 class SessionBackupWriteError(SessionTransferError):
+    """Raised when a session backup cannot be written atomically."""
     pass
 
 

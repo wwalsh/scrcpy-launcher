@@ -66,6 +66,11 @@ the native dependency review. It does not query live vulnerability services.
 
 ## Architecture
 
+The API documentation and comment policy are defined in
+[`docs/code-documentation.md`](code-documentation.md). Public callables carry
+their contracts in docstrings; this section summarizes the ownership and
+process boundaries that are most important when changing the code.
+
 - `src/main.py` handles invocation, logging, single-instance ownership, startup
   recovery, and tray startup.
 - `src/tray.py` owns the native Win32 tray and starts Settings separately.
@@ -98,6 +103,20 @@ standard Program Files locations. An explicit compiler can be supplied.
 The PortableApps tools are discovered in the current user's standard
 `PortableApps` directory or through `PORTABLEAPPS_LAUNCHER_HOME` and
 `PORTABLEAPPS_INSTALLER_HOME`. Explicit executable paths may also be supplied.
+
+The main build switches are:
+
+- `-SkipInstaller` skips NSIS creation.
+- `-SkipPortableApps` skips PortableApps.com generation.
+- `-OfflineDependencies` uses only the local dependency cache.
+- `-DependencyCache <path>` selects a shared dependency cache.
+- `-SkipBundledTools` creates a developer-only package and must be combined
+  with both packaging skip switches.
+
+The build recreates generated `build/` and `dist/` output beneath the project
+root, stages verified bundled tools, runs the test suite, and performs release
+verification before reporting success. It does not modify tracked source or
+user configuration files.
 
 ## Release build
 

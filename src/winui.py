@@ -22,6 +22,7 @@ IDNO = 7
 
 
 class DialogChoice(Enum):
+    """Result values returned by native confirmation dialogs."""
     YES = "yes"
     NO = "no"
     CANCEL = "cancel"
