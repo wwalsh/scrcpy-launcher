@@ -21,6 +21,8 @@ ErrorCallback = Callable[[SessionLaunchError], None]
 
 STARTUP_WINDOW_TIMEOUT_SECONDS = 10.0
 STARTUP_POLL_INTERVAL_SECONDS = 0.1
+SESSION_STOP_TIMEOUT_SECONDS = 3.0
+ADB_STOP_TIMEOUT_SECONDS = 5.0
 
 
 def _process_has_visible_window(process_id: int) -> bool:
@@ -98,6 +100,37 @@ class _ProcessManager:
         ).start()
         return process
 
+    def active_count(self) -> int:
+        """Return the number of scrcpy processes launched by this manager."""
+        with self._lock:
+            return len(self._processes)
+
+    def stop_all(self) -> int:
+        """Stop all scrcpy processes launched by this manager."""
+        with self._lock:
+            processes = list(self._processes)
+
+        stopped = 0
+        for process in processes:
+            if process.poll() is not None:
+                continue
+            try:
+                process.terminate()
+                process.wait(timeout=SESSION_STOP_TIMEOUT_SECONDS)
+                stopped += 1
+            except subprocess.TimeoutExpired:
+                logger.warning("scrcpy process %s did not stop gracefully; killing it", process.pid)
+                try:
+                    process.kill()
+                    process.wait(timeout=SESSION_STOP_TIMEOUT_SECONDS)
+                    stopped += 1
+                except (OSError, subprocess.TimeoutExpired):
+                    logger.exception("Could not kill scrcpy process %s", process.pid)
+            except OSError:
+                logger.exception("Could not stop scrcpy process %s", process.pid)
+
+        return stopped
+
     def _watch_startup(
         self,
         process: subprocess.Popen[str],
@@ -159,6 +192,41 @@ class _ProcessManager:
 
 
 _manager = _ProcessManager()
+
+
+def active_session_count() -> int:
+    """Return the number of launcher-managed scrcpy sessions still running."""
+    return _manager.active_count()
+
+
+def stop_all_sessions() -> int:
+    """Stop all launcher-managed scrcpy sessions."""
+    return _manager.stop_all()
+
+
+def stop_adb_server(adb_path: str) -> bool:
+    """Stop the ADB server associated with the selected scrcpy installation."""
+    try:
+        completed = subprocess.run(
+            [adb_path, "kill-server"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=ADB_STOP_TIMEOUT_SECONDS,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            check=False,
+        )
+    except (FileNotFoundError, PermissionError, OSError, subprocess.TimeoutExpired):
+        logger.exception("Could not stop ADB server using %s", adb_path)
+        return False
+    if completed.returncode != 0:
+        detail = (completed.stderr or "").strip()
+        logger.warning("ADB server shutdown failed with code %s: %s", completed.returncode, detail)
+        return False
+    logger.info("Stopped ADB server using %s", adb_path)
+    return True
 
 
 def launch_session(

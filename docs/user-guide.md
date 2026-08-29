@@ -56,6 +56,9 @@ explicit path is supplied. Windows autostart is intentionally unavailable.
 - Right-click opens the current session menu.
 - Right-click reloads the saved configuration before building the menu.
 - The icon restores itself automatically if Windows Explorer restarts.
+- **Stop all scrcpy sessions** closes sessions launched by this tray instance.
+- **Stop ADB server** stops the selected installation's ADB server after
+  confirmation. This can interrupt other Android tools using ADB.
 - Settings and Quit are unavailable while tray-launched Settings is open.
 - **About scrcpy-launcher** displays version, license, bundled-runtime, and
   project information in a native Windows dialog.
@@ -244,8 +247,9 @@ device identifiers, or application inventories.
 
 ### Installing updates
 
-Quit the tray before updating. Running a newer installer preserves installed
-configuration. Rerunning the same installer repairs missing application files.
+Stop all scrcpy sessions and stop the ADB server before updating, then quit the
+tray. Running a newer installer preserves installed configuration. Rerunning
+the same installer repairs missing application files.
 
 For portable updates, extract the new ZIP over the old portable directory only
 after quitting. The release ZIP does not contain `config.json`.
