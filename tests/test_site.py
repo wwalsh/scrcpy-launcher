@@ -79,7 +79,7 @@ class SiteTests(unittest.TestCase):
 
         self.assertGreaterEqual(len(versions), 3)
         self.assertEqual(versions[0], APP_VERSION)
-        self.assertEqual(versions[:3], ["0.7.6", "0.7.5", "0.7.4"])
+        self.assertEqual(versions[:3], ["0.8.0", "0.7.6", "0.7.5"])
         self.assertIn("Keep a Changelog", changelog)
 
 

@@ -5,6 +5,17 @@ All notable changes to the public scrcpy-launcher releases are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-29
+
+### Changed
+
+- Limited Settings device and application discovery to single-worker
+  background executors and documented stale-request handling.
+- Reduced repeated bundled-runtime filesystem traversal and configuration
+  validation work while preserving integrity and recovery guarantees.
+- Centralized hidden Windows subprocess setup for ADB and scrcpy discovery.
+- Documented the scrcpy session lifecycle and startup error boundary.
+
 ## [0.7.6] - 2026-08-28
 
 ### Changed
@@ -75,6 +86,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   dependency controls, bundled-runtime integrity verification, targeted log
   redaction, and hardened installer cleanup.
 
+[0.8.0]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.3...v0.7.4
