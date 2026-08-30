@@ -34,7 +34,7 @@ jobs:
         run: .\packaging\build.ps1 -SkipInstaller -SkipPortableApps
 
       - name: Upload validated build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: scrcpy-launcher-build-${{ github.sha }}
           path: dist/artifacts/
