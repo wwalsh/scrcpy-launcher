@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import unittest
 from pathlib import Path
 
@@ -16,6 +17,19 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 class PackagingTests(unittest.TestCase):
+    def test_github_actions_are_pinned_to_full_shas(self) -> None:
+        workflow_paths = (
+            PROJECT_ROOT / ".github" / "workflows" / "build-validation.yml",
+            PROJECT_ROOT / ".github" / "workflows" / "security-audit.yml",
+        )
+        uses_pattern = re.compile(r"^\s+-?\s*uses: ([^@]+)@([0-9a-f]{40})\s+# (v[^\s]+)$")
+        for path in workflow_paths:
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if "uses:" not in line:
+                    continue
+                with self.subTest(path=path.name, line=line):
+                    self.assertIsNotNone(uses_pattern.match(line))
+
     def test_personal_config_is_ignored_and_example_is_sanitized(self) -> None:
         ignore = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
         example_path = PROJECT_ROOT / "config.example.json"

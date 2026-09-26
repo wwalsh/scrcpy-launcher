@@ -6,7 +6,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+from src import config as config_module
 from src.config import (
     CURRENT_SCHEMA_VERSION,
     SCRCPY_MODE_BUNDLED,
@@ -356,6 +358,22 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(saved["scrcpy_mode"], SCRCPY_MODE_CUSTOM)
             self.assertEqual(saved["schema_version"], CURRENT_SCHEMA_VERSION)
             self.assertFalse(config.needs_migration_save)
+
+    def test_save_copies_valid_primary_to_backup_once_before_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_config(directory, {"scrcpy_path": "old.exe", "sessions": []})
+            config = Config(path)
+            config.set_scrcpy_path("new.exe")
+
+            with patch(
+                "src.config._atomic_copy",
+                wraps=config_module._atomic_copy,
+            ) as copy:
+                config.save()
+
+            self.assertEqual(copy.call_count, 1)
+            backup = json.loads(Path(f"{path}.bak").read_text(encoding="utf-8"))
+            self.assertEqual(backup["scrcpy_path"], "old.exe")
 
     def test_save_does_not_touch_predictable_adjacent_temp_names(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

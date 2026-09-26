@@ -303,8 +303,6 @@ class Config:
                     bak_path,
                     exc,
                 )
-            else:
-                _atomic_copy(self._config_path, bak_path)
 
         # Warn on missing scrcpy_path but allow saving (user may have set it intentionally)
         if self._scrcpy_mode == SCRCPY_MODE_CUSTOM and not Path(self._scrcpy_path).exists():
