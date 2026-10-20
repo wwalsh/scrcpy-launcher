@@ -61,7 +61,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         resolution = ScrcpyResolution(
             Path("D:/portable/tools/scrcpy/scrcpy.exe"),
             SCRCPY_MODE_BUNDLED,
-            "bundled scrcpy 4.1",
+            "bundled scrcpy 5.0.1",
         )
         resolve.return_value = resolution
 
@@ -154,7 +154,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(
-            AppDiscoveryError, "does not support --list-apps.*bundled scrcpy 4.1"
+            AppDiscoveryError, "does not support --list-apps.*bundled scrcpy 5.0.1"
         ):
             list_device_apps("old-scrcpy.exe", "ABC")
 
@@ -188,7 +188,7 @@ class DeviceAppDiscoveryTests(unittest.TestCase):
         run.return_value = subprocess.CompletedProcess([], 0, "unexpected output", "")
 
         with self.assertRaisesRegex(
-            AppDiscoveryError, "unsupported application list.*bundled scrcpy 4.1"
+            AppDiscoveryError, "unsupported application list.*bundled scrcpy 5.0.1"
         ):
             list_device_apps("scrcpy.exe", "ABC")
 

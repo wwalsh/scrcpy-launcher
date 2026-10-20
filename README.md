@@ -13,7 +13,7 @@ A session is a
 named set of scrcpy command-line options for a particular device, application,
 window layout, or use case.
 
-The packaged application includes verified copies of scrcpy 4.1 and ADB. An
+The packaged application includes verified copies of scrcpy 5.0.1 and ADB. An
 installed or portable user does not need Python or a separate scrcpy download.
 
 ## Download

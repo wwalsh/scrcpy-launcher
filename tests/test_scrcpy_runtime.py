@@ -162,7 +162,7 @@ class ScrcpyRuntimeTests(unittest.TestCase):
     def test_trusted_inventory_matches_packaging_manifest(self) -> None:
         project_root = Path(__file__).resolve().parent.parent
         manifest = json.loads(
-            (project_root / "packaging/dependencies/scrcpy-win64-v4.1.json").read_text(
+            (project_root / "packaging/dependencies/scrcpy-win64-v5.0.1.json").read_text(
                 encoding="utf-8"
             )
         )

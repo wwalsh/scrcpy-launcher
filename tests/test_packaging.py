@@ -89,7 +89,7 @@ class PackagingTests(unittest.TestCase):
             "packaging/build_portableapps_launcher.ps1",
             "packaging/portableapps/App/AppInfo/appinfo.ini",
             "packaging/portableapps/App/AppInfo/Launcher/scrcpy-launcherPortable.ini",
-            "packaging/dependencies/scrcpy-win64-v4.1.json",
+            "packaging/dependencies/scrcpy-win64-v5.0.1.json",
             "packaging/generate_version_info.py",
             "docs/windows-lifecycle-test.md",
             "docs/security-model.md",

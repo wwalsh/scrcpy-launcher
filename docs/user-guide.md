@@ -112,7 +112,7 @@ queries the device again. A failed refresh keeps the last successful list and
 does not alter the session being edited.
 
 Only applications with a standard or Leanback launch intent are listed. A
-custom scrcpy executable must support `--list-apps`; bundled scrcpy 4.1 does.
+custom scrcpy executable must support `--list-apps`; bundled scrcpy 5.0.1 does.
 
 ![Illustrative installed-application selector with fictional packages](images/app-selector-generated.png)
 
@@ -213,7 +213,7 @@ a newer unsupported schema are rejected without rewriting them.
 
 ## Bundled and custom scrcpy
 
-Bundled mode uses the packaged scrcpy 4.1 distribution under `tools\scrcpy`.
+Bundled mode uses the packaged scrcpy 5.0.1 distribution under `tools\scrcpy`.
 Before first use in each launcher or Settings process, the complete inventory is
 checked against compiled-in SHA-256 hashes. A missing, changed, or unexpected
 file is rejected and should be repaired by rerunning the trusted installer.

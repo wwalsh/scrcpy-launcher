@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MANIFEST = PROJECT_ROOT / "packaging/dependencies/scrcpy-win64-v4.1.json"
+DEFAULT_MANIFEST = PROJECT_ROOT / "packaging/dependencies/scrcpy-win64-v5.0.1.json"
 DEFAULT_REVIEW = PROJECT_ROOT / "packaging/dependencies/security-review.json"
 REQUIREMENT_FILES = (
     PROJECT_ROOT / "requirements.txt",

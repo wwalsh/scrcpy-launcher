@@ -28,7 +28,7 @@ validate_requirement_locks = security_audit.validate_requirement_locks
 
 class SecurityAuditTests(unittest.TestCase):
     def test_current_dependency_policy_passes(self) -> None:
-        run_audit(today=date(2026, 8, 22))
+        run_audit(today=date(2026, 10, 19))
 
     def test_requirement_must_be_exactly_pinned_and_hashed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -40,7 +40,7 @@ class SecurityAuditTests(unittest.TestCase):
 
     def test_stale_native_review_fails(self) -> None:
         with self.assertRaisesRegex(SecurityAuditError, "stale"):
-            validate_native_review(today=date(2026, 10, 7))
+            validate_native_review(today=date(2026, 12, 4))
 
     def test_manifest_version_change_requires_new_review(self) -> None:
         manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
@@ -53,7 +53,7 @@ class SecurityAuditTests(unittest.TestCase):
                 validate_native_review(
                     changed_manifest,
                     DEFAULT_REVIEW,
-                    today=date(2026, 8, 22),
+                    today=date(2026, 10, 19),
                 )
 
 

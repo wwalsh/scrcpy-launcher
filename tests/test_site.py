@@ -62,7 +62,7 @@ class SiteTests(unittest.TestCase):
             "THIRD-PARTY-NOTICES.md",
             "issues",
             "LICENSE",
-            "scrcpy 4.1",
+            "scrcpy 5.0.1",
             "not the official scrcpy project",
             "SHA-256",
             "Authenticode",
