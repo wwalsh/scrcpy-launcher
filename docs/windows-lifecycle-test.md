@@ -5,6 +5,21 @@ PortableApps.com release. Test with production
 artifacts from `dist\artifacts`, not the PyInstaller staging directory. Preserve a
 copy of any real configuration before testing.
 
+## v0.9.0 acceptance record
+
+`v0.9.0` adds an optional global window-height override, updates the bundled
+scrcpy runtime to 5.0.1, and hardens process diagnostics and autostart cleanup.
+
+| Check | Result |
+| --- | --- |
+| Automated tests | Passed 2026-10-24: 300 pytest tests and 233 subtests; 296 unittest tests |
+| Dependency security policy | Passed 2026-10-24; review dated 2026-10-19, 45-day limit retained |
+| Complete production build and release lifecycle verification | Passed 2026-10-24 for installer, portable ZIP, and PortableApps package |
+| Artifact SHA-256 checksum files | Verified 2026-10-24 for all three distributables |
+| PortableApps first-run and same-version reinstall | Passed 2026-10-24 in an isolated directory; a distinctive session and `Data\config.json` hash were preserved |
+| Simple portable ZIP upgrade | Passed 2026-10-24 in an isolated directory; a distinctive session and adjacent `config.json` hash were preserved |
+| Remaining manual matrix | Not run: installed-app repair/uninstall, side-by-side operation, and Explorer restart |
+
 ## v0.7.3 acceptance record
 
 `v0.7.3` completes the Milestone 8 maintenance phase. It removes obsolete UI
@@ -86,7 +101,7 @@ are obvious. Quit the tray before running Setup or Uninstall.
 
 | Scenario | Procedure | Pass condition |
 | --- | --- | --- |
-| Fresh install | Remove or temporarily rename the launcher's AppData config, then install | A schema 2 bundled-mode config is created and bundled scrcpy launches |
+| Fresh install | Remove or temporarily rename the launcher's AppData config, then install | A schema 3 bundled-mode config is created and bundled scrcpy launches |
 | Custom upgrade | Select custom mode, add a session, and run the newer installer | Mode, path, sessions, and arguments are unchanged |
 | Bundled upgrade | Select bundled mode, add a session, and run the newer installer | Sessions are unchanged and the packaged scrcpy version is current |
 | Repair | Delete `tools\scrcpy\scrcpy.exe`, then rerun the same installer | Setup restores scrcpy; configuration is byte-for-byte unchanged |
