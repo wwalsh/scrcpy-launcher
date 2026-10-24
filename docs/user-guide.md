@@ -255,9 +255,16 @@ device identifiers, or application inventories.
 
 ### Installing updates
 
-Stop all scrcpy sessions and stop the ADB server before updating, then quit the
-tray. Running a newer installer preserves installed configuration. Rerunning
-the same installer repairs missing application files.
+Use **Stop all scrcpy sessions** and **Stop ADB server** from the tray before
+updating, then choose **Quit**. Quit alone leaves running scrcpy sessions and
+the ADB server active; they can lock bundled files during an upgrade. Running
+a newer installer preserves installed configuration. Rerunning the same
+installer repairs missing application files.
+
+For PortableApps upgrades, install the newer `.paf.exe` into the same directory
+after stopping those processes. If the installer reports that it cannot write
+`AdbWinApi.dll`, stop the ADB server from that installation and choose
+**Retry**. Do not choose **Ignore**, which could leave mixed runtime files.
 
 For portable updates, extract the new ZIP over the old portable directory only
 after quitting. The release ZIP does not contain `config.json`.

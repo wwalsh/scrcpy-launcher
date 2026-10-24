@@ -98,7 +98,8 @@ when the verified cache is already populated:
 ## Manual matrix
 
 Use a distinctive session name and custom scrcpy path so preservation failures
-are obvious. Quit the tray before running Setup or Uninstall.
+are obvious. Stop all scrcpy sessions and the selected installation's ADB server,
+then quit the tray before running Setup, Uninstall, or a PortableApps upgrade.
 
 | Scenario | Procedure | Pass condition |
 | --- | --- | --- |
@@ -111,7 +112,7 @@ are obvious. Quit the tray before running Setup or Uninstall.
 | Portable first run | Extract the ZIP into a new folder and launch it | Adjacent `config.json` is created in bundled mode; AppData config is untouched |
 | Portable upgrade | Edit adjacent `config.json`, then extract a newer ZIP over the folder | Adjacent config is byte-for-byte unchanged and the new application launches |
 | PortableApps first run | Install the `.paf.exe` into a new PortableApps directory and launch it | `Data\config.json` is created in bundled mode; installed and simple-portable configs are untouched |
-| PortableApps upgrade | Add a distinctive session, quit the tray, then install the same or newer `.paf.exe` to the same directory | The session and `Data\config.json` are preserved and the updated application launches |
+| PortableApps upgrade | Add a distinctive session, stop all scrcpy sessions and the ADB server, quit the tray, then install the same or newer `.paf.exe` to the same directory | The session and `Data\config.json` are preserved and the updated application launches |
 | Side-by-side | Run installed and portable editions separately | Installed edition uses AppData; portable edition uses only its adjacent config |
 | Explorer restart | With the tray running, restart **Windows Explorer** twice from Task Manager | The icon returns once after each restart; its menu, Settings, and Quit remain responsive |
 
