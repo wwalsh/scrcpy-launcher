@@ -19,6 +19,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Hardened process execution, bounded diagnostic capture, and redacted device
   serials from logs and error messages.
 
+### Security
+
+- Updated locked setuptools to 84.1.0 to address a Windows legacy wheel
+  installation path escape (GHSA-xmj3-9gf7-h52w).
+
 ### Fixed
 
 - Disabling autostart now removes a stale launcher registry entry after the

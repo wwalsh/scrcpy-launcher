@@ -14,6 +14,7 @@ scrcpy runtime to 5.0.1, and hardens process diagnostics and autostart cleanup.
 | --- | --- |
 | Automated tests | Passed 2026-10-24: 300 pytest tests and 233 subtests; 296 unittest tests |
 | Dependency security policy | Passed 2026-10-24; review dated 2026-10-19, 45-day limit retained |
+| Locked Python dependency advisory audit | Found GHSA-xmj3-9gf7-h52w in setuptools 84.0.0; updated to 84.1.0 and reran audit |
 | Complete production build and release lifecycle verification | Passed 2026-10-24 for installer, portable ZIP, and PortableApps package |
 | Artifact SHA-256 checksum files | Verified 2026-10-24 for all three distributables |
 | PortableApps first-run and same-version reinstall | Passed 2026-10-24 in an isolated directory; a distinctive session and `Data\config.json` hash were preserved |
