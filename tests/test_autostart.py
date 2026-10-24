@@ -61,7 +61,15 @@ class AutostartTests(unittest.TestCase):
                 write.assert_called_once_with(manager.expected_command)
             with patch("src.autostart._delete_registration") as delete:
                 manager.apply(False)
-                delete.assert_called_once_with(manager.expected_command)
+                delete.assert_called_once_with()
+
+    def test_disable_clears_stale_registration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manager = self._manager(directory)
+            with patch("src.autostart._delete_registration") as delete:
+                manager.disable()
+
+        delete.assert_called_once_with()
 
     @patch("src.autostart.is_frozen", return_value=False)
     def test_source_mode_is_unavailable(self, _frozen) -> None:

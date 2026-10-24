@@ -92,6 +92,16 @@ def _selected_start_app_value(current_value: str, package_name: str) -> str:
     return f"+{package_name}" if force_stop else package_name
 
 
+def _window_height_for_save(enabled: bool, text: str, current_height: int) -> int:
+    """Return the height to persist, ignoring inactive-field text when disabled."""
+    if not enabled:
+        return current_height
+    try:
+        return int(text.strip())
+    except ValueError as exc:
+        raise ValueError("Window height must be a whole number of pixels.") from exc
+
+
 class _SettingsDialog:
     """Modal tkinter dialog for editing scrcpy-launcher configuration."""
 
@@ -1129,11 +1139,15 @@ class _SettingsDialog:
             self._path_entry.focus_set()
             return
         try:
-            window_height = int(self._window_height_var.get().strip())
-        except ValueError:
+            window_height = _window_height_for_save(
+                self._window_height_enabled_var.get(),
+                self._window_height_var.get(),
+                self._config.window_height,
+            )
+        except ValueError as exc:
             messagebox.showerror(
                 "Invalid Window Height",
-                "Window height must be a whole number of pixels.",
+                str(exc),
                 parent=self._dialog,
             )
             self._window_height_entry.focus_set()

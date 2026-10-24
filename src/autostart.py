@@ -72,8 +72,13 @@ class AutostartManager:
         logger.info("Enabled Windows autostart")
 
     def disable(self) -> None:
-        """Remove only this launcher's current-user autostart registration."""
-        _delete_registration(self.expected_command)
+        """Remove this launcher's current-user autostart registration.
+
+        A stale entry still uses this launcher's registry value name, but its
+        command can reference an older install location. Disabling from this
+        manager is an explicit request to clear that stale registration too.
+        """
+        _delete_registration()
         logger.info("Disabled Windows autostart")
 
     def apply(self, enabled: bool) -> None:
