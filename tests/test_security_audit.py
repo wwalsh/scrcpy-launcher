@@ -38,6 +38,18 @@ class SecurityAuditTests(unittest.TestCase):
             with self.assertRaisesRegex(SecurityAuditError, "unhashed"):
                 validate_requirement_locks((unlocked,))
 
+    def test_requirement_rejects_unapproved_trailing_options(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            invalid = Path(directory) / "requirements.txt"
+            invalid.write_text(
+                "example==1.0 --hash=sha256:" + "0" * 64
+                + " --index-url=https://example.invalid\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(SecurityAuditError, "unhashed"):
+                validate_requirement_locks((invalid,))
+
     def test_stale_native_review_fails(self) -> None:
         with self.assertRaisesRegex(SecurityAuditError, "stale"):
             validate_native_review(today=date(2026, 12, 4))

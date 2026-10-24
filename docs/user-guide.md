@@ -132,6 +132,12 @@ Arguments appear one per line. Blank lines are ignored.
 | No audio | `--no-audio` |
 | New display | `--new-display` |
 
+The **Global scrcpy options** section can enable a launcher-wide
+`--window-height=<pixels>` override for every session. When enabled, it replaces
+any per-session `--window-height` value at launch; when disabled, each session's
+saved arguments are launched unchanged. The setting is stored in the main
+configuration and is not included in session-only exports.
+
 Quick controls update matching arguments and preserve unrelated advanced
 arguments. You may add any option supported by the selected scrcpy version. The
 launcher passes saved arguments to scrcpy without shell interpretation.
@@ -175,7 +181,7 @@ the backup, and unsupported format versions are rejected without partial import.
 
 ## Configuration and recovery
 
-Save writes schema version 2 and preserves the previous valid file as
+Save writes schema version 3 and preserves the previous valid file as
 `config.json.bak`. An invalid primary file never replaces a valid backup.
 
 If startup cannot load the primary configuration, the recovery prompt can:
@@ -192,9 +198,11 @@ Advanced schema example:
 
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "scrcpy_mode": "bundled",
   "scrcpy_path": "scrcpy.exe",
+  "window_height_enabled": true,
+  "window_height": 720,
   "sessions": [
     {
       "name": "Phone",

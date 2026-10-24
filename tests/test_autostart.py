@@ -61,7 +61,7 @@ class AutostartTests(unittest.TestCase):
                 write.assert_called_once_with(manager.expected_command)
             with patch("src.autostart._delete_registration") as delete:
                 manager.apply(False)
-                delete.assert_called_once_with()
+                delete.assert_called_once_with(manager.expected_command)
 
     @patch("src.autostart.is_frozen", return_value=False)
     def test_source_mode_is_unavailable(self, _frozen) -> None:
@@ -105,6 +105,19 @@ class AutostartTests(unittest.TestCase):
     @patch("src.autostart.winreg.OpenKey", side_effect=FileNotFoundError)
     def test_deleting_missing_registration_is_idempotent(self, _open_key) -> None:
         _delete_registration()
+
+    @patch("src.autostart.winreg.DeleteValue")
+    @patch("src.autostart.winreg.QueryValueEx", return_value=("other command", 1))
+    @patch("src.autostart.winreg.OpenKey")
+    def test_deleting_preserves_changed_registration(
+        self, open_key, _query, delete_value
+    ) -> None:
+        key = MagicMock()
+        open_key.return_value.__enter__.return_value = key
+
+        _delete_registration("expected command")
+
+        delete_value.assert_not_called()
 
 
 if __name__ == "__main__":

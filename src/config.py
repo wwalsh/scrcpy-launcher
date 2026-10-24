@@ -20,7 +20,7 @@ from .safe_io import (
 
 logger = logging.getLogger(__name__)
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 SCRCPY_MODE_BUNDLED = "bundled"
 SCRCPY_MODE_CUSTOM = "custom"
 SCRCPY_MODES = frozenset((SCRCPY_MODE_BUNDLED, SCRCPY_MODE_CUSTOM))
@@ -30,6 +30,9 @@ MAX_ARGS_PER_SESSION = 256
 MAX_ARG_CHARS = 4096
 MAX_TOTAL_ARG_CHARS = 32768
 MAX_SCRCPY_PATH_CHARS = 32767
+DEFAULT_WINDOW_HEIGHT = 720
+MIN_WINDOW_HEIGHT = 1
+MAX_WINDOW_HEIGHT = 32767
 
 
 @dataclass
@@ -82,6 +85,8 @@ class Config:
     _config_path: Path
     _scrcpy_mode: str
     _scrcpy_path: str
+    _window_height_enabled: bool
+    _window_height: int
     _sessions: tuple[Session, ...]
     _source_schema_version: int
 
@@ -95,6 +100,12 @@ class Config:
 
         self._scrcpy_mode = self._validate_scrcpy_mode(data.get("scrcpy_mode"))
         self._scrcpy_path = self._validate_scrcpy_path(data.get("scrcpy_path"))
+        self._window_height_enabled = self._validate_window_height_enabled(
+            data.get("window_height_enabled", False)
+        )
+        self._window_height = self._validate_window_height(
+            data.get("window_height", DEFAULT_WINDOW_HEIGHT)
+        )
 
         self._sessions = self.validate_session_list(data.get("sessions", []))
 
@@ -176,6 +187,22 @@ class Config:
         return normalized
 
     @staticmethod
+    def _validate_window_height_enabled(value: Any) -> bool:
+        if not isinstance(value, bool):
+            raise ConfigValidationError("'window_height_enabled' must be a boolean")
+        return value
+
+    @staticmethod
+    def _validate_window_height(value: Any) -> int:
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ConfigValidationError("'window_height' must be an integer")
+        if not MIN_WINDOW_HEIGHT <= value <= MAX_WINDOW_HEIGHT:
+            raise ConfigValidationError(
+                f"'window_height' must be between {MIN_WINDOW_HEIGHT} and {MAX_WINDOW_HEIGHT}"
+            )
+        return value
+
+    @staticmethod
     def _validate_unique_names(sessions: list[Session]) -> None:
         seen: set[str] = set()
         for s in sessions:
@@ -254,6 +281,16 @@ class Config:
         return self._scrcpy_path
 
     @property
+    def window_height_enabled(self) -> bool:
+        """Return whether the global window-height override is enabled."""
+        return self._window_height_enabled
+
+    @property
+    def window_height(self) -> int:
+        """Return the global scrcpy window height in pixels."""
+        return self._window_height
+
+    @property
     def sessions(self) -> tuple[Session, ...]:
         """Return saved sessions in their tray-menu order."""
         return self._sessions
@@ -281,6 +318,14 @@ class Config:
         """Validate and update the scrcpy executable path."""
         self._scrcpy_path = self._validate_scrcpy_path(value)
 
+    def set_window_height_enabled(self, value: bool) -> None:
+        """Enable or disable the global window-height override."""
+        self._window_height_enabled = self._validate_window_height_enabled(value)
+
+    def set_window_height(self, value: int) -> None:
+        """Validate and update the global scrcpy window height."""
+        self._window_height = self._validate_window_height(value)
+
     def save(self) -> None:
         """Persist configuration atomically while preserving a valid ``.bak``.
 
@@ -291,6 +336,10 @@ class Config:
         """
         self._scrcpy_mode = self._validate_scrcpy_mode(self._scrcpy_mode)
         self._scrcpy_path = self._validate_scrcpy_path(self._scrcpy_path)
+        self._window_height_enabled = self._validate_window_height_enabled(
+            self._window_height_enabled
+        )
+        self._window_height = self._validate_window_height(self._window_height)
         self._sessions = self.validate_session_objects(self._sessions)
 
         bak_path = backup_path_for(self._config_path)
@@ -315,6 +364,8 @@ class Config:
             "schema_version": CURRENT_SCHEMA_VERSION,
             "scrcpy_mode": self._scrcpy_mode,
             "scrcpy_path": self._scrcpy_path,
+            "window_height_enabled": self._window_height_enabled,
+            "window_height": self._window_height,
             "sessions": [
                 {"name": s.name, "args": list(s.args)}
                 for s in self._sessions
@@ -477,4 +528,12 @@ def _migrate_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
     return migrated
 
 
-_MIGRATIONS = {0: _migrate_v0_to_v1, 1: _migrate_v1_to_v2}
+def _migrate_v2_to_v3(data: dict[str, Any]) -> dict[str, Any]:
+    migrated = dict(data)
+    migrated["window_height_enabled"] = False
+    migrated["window_height"] = DEFAULT_WINDOW_HEIGHT
+    migrated["schema_version"] = 3
+    return migrated
+
+
+_MIGRATIONS = {0: _migrate_v0_to_v1, 1: _migrate_v1_to_v2, 2: _migrate_v2_to_v3}

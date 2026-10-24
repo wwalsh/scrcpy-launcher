@@ -18,8 +18,10 @@ REQUIREMENT_FILES = (
     PROJECT_ROOT / "requirements.txt",
     PROJECT_ROOT / "requirements-build.txt",
 )
-_EXACT_REQUIREMENT = re.compile(r"^[A-Za-z0-9_.-]+(?:\[[^]]+\])?==[^\s\\]+")
-_HASH = re.compile(r"--hash=sha256:[0-9a-fA-F]{64}\b")
+_LOCKED_REQUIREMENT = re.compile(
+    r"^[A-Za-z0-9_.-]+(?:\[[^]]+\])?==[^\s\\]+"
+    r"(?:\s+--hash=sha256:[0-9a-fA-F]{64})+$"
+)
 
 
 class SecurityAuditError(ValueError):
@@ -50,7 +52,7 @@ def validate_requirement_locks(paths: tuple[Path, ...] = REQUIREMENT_FILES) -> N
         for line in _logical_requirement_lines(path):
             if line.startswith(("-r ", "--requirement ")):
                 continue
-            if not _EXACT_REQUIREMENT.match(line) or not _HASH.search(line):
+            if _LOCKED_REQUIREMENT.fullmatch(line) is None:
                 raise SecurityAuditError(
                     f"{path.name} contains an unpinned or unhashed requirement: {line}"
                 )

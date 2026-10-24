@@ -73,7 +73,7 @@ class AutostartManager:
 
     def disable(self) -> None:
         """Remove only this launcher's current-user autostart registration."""
-        _delete_registration()
+        _delete_registration(self.expected_command)
         logger.info("Disabled Windows autostart")
 
     def apply(self, enabled: bool) -> None:
@@ -123,14 +123,27 @@ def _write_registration(command: str) -> None:
         raise AutostartError(f"Could not enable Windows autostart: {exc}") from exc
 
 
-def _delete_registration() -> None:
+def _delete_registration(expected_command: str | None = None) -> None:
+    """Delete the entry only if it is absent or still owned by this launcher."""
     try:
         with winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
             RUN_KEY,
             0,
-            winreg.KEY_SET_VALUE,
+            winreg.KEY_READ | winreg.KEY_SET_VALUE,
         ) as key:
+            if expected_command is not None:
+                try:
+                    registered, value_type = winreg.QueryValueEx(key, VALUE_NAME)
+                except FileNotFoundError:
+                    return
+                if (
+                    value_type not in (winreg.REG_SZ, winreg.REG_EXPAND_SZ)
+                    or not isinstance(registered, str)
+                    or registered.casefold() != expected_command.casefold()
+                ):
+                    logger.warning("Preserving a stale or changed Windows autostart entry")
+                    return
             winreg.DeleteValue(key, VALUE_NAME)
     except FileNotFoundError:
         return

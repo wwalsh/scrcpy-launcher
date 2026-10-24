@@ -7,21 +7,98 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .cli import InvocationError, LaunchMode, parse_invocation
-from .config import Config, ConfigError, load_config
-from .config_recovery import (
-    ConfigRecoveryError,
-    inspect_recovery,
-    open_config_folder,
-    restore_backup,
-)
-from .logging_setup import setup_logging
-from .paths import PortableConfigError, resolve_config_path, seed_portable_config
-from .single_instance import SingleInstance, SingleInstanceError
-from .winui import DialogChoice, ask_yes_no, ask_yes_no_cancel, show_error, show_info
+
+if TYPE_CHECKING:
+    from .config import Config
 
 logger = logging.getLogger(__name__)
+
+
+def setup_logging(mode: str):
+    """Load logging setup only when a command mode needs it."""
+    from .logging_setup import setup_logging as _setup_logging
+
+    return _setup_logging(mode)
+
+
+def load_config(config_path: Path | str = "config.json"):
+    """Load configuration lazily while preserving the entrypoint seam for tests."""
+    from .config import load_config as _load_config
+
+    return _load_config(config_path)
+
+
+def resolve_config_path(explicit_config_path: str | None = None) -> Path:
+    """Resolve the configuration path without importing path helpers at startup."""
+    from .paths import resolve_config_path as _resolve_config_path
+
+    return _resolve_config_path(explicit_config_path)
+
+
+def seed_portable_config(config_path: Path) -> bool:
+    """Create a portable first-run configuration when the selected path needs it."""
+    from .paths import seed_portable_config as _seed_portable_config
+
+    return _seed_portable_config(config_path)
+
+
+def inspect_recovery(config_path: Path):
+    """Inspect configuration recovery candidates on demand."""
+    from .config_recovery import inspect_recovery as _inspect_recovery
+
+    return _inspect_recovery(config_path)
+
+
+def restore_backup(inspection):
+    """Restore a validated configuration backup on demand."""
+    from .config_recovery import restore_backup as _restore_backup
+
+    return _restore_backup(inspection)
+
+
+def open_config_folder(config_path: Path) -> None:
+    """Open the configuration folder using the recovery helper on demand."""
+    from .config_recovery import open_config_folder as _open_config_folder
+
+    _open_config_folder(config_path)
+
+
+def SingleInstance():
+    """Construct the single-instance guard only for normal tray mode."""
+    from .single_instance import SingleInstance as _SingleInstance
+
+    return _SingleInstance()
+
+
+def show_error(title: str, message: str) -> None:
+    """Display a native error dialog without loading Windows UI helpers at import time."""
+    from .winui import show_error as _show_error
+
+    _show_error(title, message)
+
+
+def show_info(title: str, message: str) -> None:
+    """Display a native information dialog on demand."""
+    from .winui import show_info as _show_info
+
+    _show_info(title, message)
+
+
+def ask_yes_no(title: str, message: str):
+    """Display a native Yes/No dialog on demand."""
+    from .winui import ask_yes_no as _ask_yes_no
+
+    return _ask_yes_no(title, message)
+
+
+def ask_yes_no_cancel(title: str, message: str):
+    """Display a native Yes/No/Cancel dialog on demand."""
+    from .winui import ask_yes_no_cancel as _ask_yes_no_cancel
+
+    return _ask_yes_no_cancel(title, message)
 
 
 def main() -> int:
@@ -46,6 +123,8 @@ def main() -> int:
 
     if invocation.mode is LaunchMode.PORTABLEAPPS_SMOKE_TEST:
         return _portableapps_smoke_test(invocation.config_path)
+
+    from .single_instance import SingleInstanceError
 
     log_path = setup_logging("tray")
     instance = SingleInstance()
@@ -73,6 +152,8 @@ def main() -> int:
 
 
 def _run(log_path: Path, explicit_config_path: str | None = None) -> int:
+    from .paths import PortableConfigError
+
     config_path = resolve_config_path(explicit_config_path)
     try:
         if seed_portable_config(config_path):
@@ -109,6 +190,10 @@ def _run_tray(config: Config) -> None:
 
 
 def _load_startup_config(config_path: Path, log_path: Path) -> Config | None:
+    from .config import Config, ConfigError
+    from .config_recovery import ConfigRecoveryError
+    from .winui import DialogChoice
+
     try:
         return load_config(config_path)
     except ConfigError as exc:
@@ -152,6 +237,8 @@ def _load_startup_config(config_path: Path, log_path: Path) -> Config | None:
 
 
 def _open_folder_or_report(config_path: Path, log_path: Path) -> None:
+    from .config_recovery import ConfigRecoveryError
+
     try:
         open_config_folder(config_path)
     except ConfigRecoveryError as exc:

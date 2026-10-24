@@ -39,7 +39,19 @@ class ImportEfficiencyTests(unittest.TestCase):
     def test_main_import_does_not_initialize_mode_specific_ui_or_networking(self) -> None:
         loaded = _loaded_after(
             "src.main",
-            ("src.tray", "src.settings", "tkinter", "src.update_check", "urllib.request"),
+            (
+                "src.tray",
+                "src.settings",
+                "tkinter",
+                "src.update_check",
+                "urllib.request",
+                "src.config",
+                "src.config_recovery",
+                "src.logging_setup",
+                "src.paths",
+                "src.single_instance",
+                "src.winui",
+            ),
         )
 
         self.assertFalse(any(loaded.values()))

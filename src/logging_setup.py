@@ -22,8 +22,9 @@ _SERIAL_OPTION_PATTERN = re.compile(
     r"(?i)(--serial(?:=|\s+))(?:\"[^\"]*\"|'[^']*'|[^\s,;]+)"
 )
 _DEVICE_SERIAL_PATTERN = re.compile(
-    r"(?i)(\bdevice\s+)([A-Za-z0-9][A-Za-z0-9._:-]{2,})(?="
-    r"\s+(?:is|was|with|after|for|failed|timed|returned|became|appears)\b)"
+    r"(?i)(\bdevice\s+)([A-Za-z0-9._-][A-Za-z0-9._:-]+[A-Za-z0-9._-])(?="
+    r"\s+(?:is|was|with|after|for|failed|timed|returned|became|appears)\b"
+    r"|[,:;.!?)]|$)"
 )
 
 

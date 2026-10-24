@@ -7,6 +7,15 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 
 
+def apply_global_window_height(
+    args: Sequence[str], *, enabled: bool, height: int
+) -> list[str]:
+    """Apply or skip the launcher-wide ``--window-height`` override."""
+    if not enabled:
+        return list(args)
+    return set_value(args, "--window-height", str(height))
+
+
 def get_value(args: Sequence[str], option: str) -> str:
     """Return the first value in equals or split form, or an empty string.
 
