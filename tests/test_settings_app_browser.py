@@ -83,6 +83,18 @@ class SettingsAppBrowserTests(unittest.TestCase):
         shell._refresh_apps_button.configure.assert_called_with(state="disabled")
         shell._start_app_var.set.assert_not_called()
 
+    @patch("src.settings.discover_device_apps", side_effect=RuntimeError("unexpected"))
+    def test_unexpected_application_discovery_failure_is_returned_to_ui(self, _discover) -> None:
+        shell = _settings_shell()
+
+        shell._select_device_app()
+
+        key = shell._current_app_cache_key()
+        self.assertEqual(
+            shell._app_results.get_nowait(),
+            (1, key, None, "Application discovery failed: unexpected", True),
+        )
+
     @patch("src.settings._AppSelectionDialog")
     @patch("src.settings.discover_device_apps")
     def test_cached_selection_opens_immediately_without_discovery(

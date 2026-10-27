@@ -144,6 +144,16 @@ class ScrcpyRuntimeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ScrcpyResolutionError, "unexpected"):
                     validate_bundled_installation(root=root)
 
+    def test_package_validation_rejects_non_object_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle = root / "tools" / "scrcpy"
+            bundle.mkdir(parents=True)
+            (bundle / "BUNDLE-METADATA.json").write_text("[]", encoding="utf-8")
+
+            with self.assertRaisesRegex(ScrcpyResolutionError, "JSON object"):
+                validate_bundled_installation(root=root)
+
     def test_bundled_resolution_caches_successful_validation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -162,7 +172,7 @@ class ScrcpyRuntimeTests(unittest.TestCase):
     def test_trusted_inventory_matches_packaging_manifest(self) -> None:
         project_root = Path(__file__).resolve().parent.parent
         manifest = json.loads(
-            (project_root / "packaging/dependencies/scrcpy-win64-v4.1.json").read_text(
+            (project_root / "packaging/dependencies/scrcpy-win64-v5.0.1.json").read_text(
                 encoding="utf-8"
             )
         )

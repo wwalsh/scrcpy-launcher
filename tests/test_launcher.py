@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 import sys
 import subprocess
+import io
 from unittest.mock import Mock, patch
 
 from src.launcher import (
@@ -154,16 +155,34 @@ class LauncherTests(unittest.TestCase):
         process.terminate.assert_called_once_with()
         process.kill.assert_called_once_with()
 
-    @patch("src.process.subprocess.run")
-    def test_stop_adb_server_runs_hidden_kill_server_command(self, run) -> None:
+    def test_stop_all_marks_startup_as_cancelled(self) -> None:
+        manager = _ProcessManager()
+        process = Mock()
+        process.poll.return_value = None
+        process.wait.return_value = 0
+        state = _StartupState()
+        manager._processes.append(process)
+        manager._startup_states[process] = state
+
+        manager.stop_all()
+
+        self.assertTrue(state.cancelled.is_set())
+
+    @patch("src.process.subprocess.Popen")
+    def test_stop_adb_server_runs_hidden_kill_server_command(self, popen) -> None:
         from src.launcher import stop_adb_server
 
-        run.return_value.returncode = 0
+        process = Mock()
+        process.stdout = None
+        process.stderr = io.StringIO("")
+        process.wait.return_value = 0
+        popen.return_value = process
 
         self.assertTrue(stop_adb_server("C:/tools/adb.exe"))
-        self.assertEqual(run.call_args.args[0], ["C:/tools/adb.exe", "kill-server"])
-        self.assertEqual(run.call_args.kwargs["timeout"], 5.0)
-        self.assertEqual(run.call_args.kwargs["creationflags"], getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0))
+        self.assertEqual(popen.call_args.args[0], ["C:/tools/adb.exe", "kill-server"])
+        self.assertIs(popen.call_args.kwargs["stdout"], subprocess.DEVNULL)
+        self.assertIs(popen.call_args.kwargs["stderr"], subprocess.PIPE)
+        self.assertEqual(popen.call_args.kwargs["creationflags"], getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0))
 
 
 if __name__ == "__main__":

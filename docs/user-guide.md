@@ -112,7 +112,7 @@ queries the device again. A failed refresh keeps the last successful list and
 does not alter the session being edited.
 
 Only applications with a standard or Leanback launch intent are listed. A
-custom scrcpy executable must support `--list-apps`; bundled scrcpy 4.1 does.
+custom scrcpy executable must support `--list-apps`; bundled scrcpy 5.0.1 does.
 
 ![Illustrative installed-application selector with fictional packages](images/app-selector-generated.png)
 
@@ -131,6 +131,12 @@ Arguments appear one per line. Blank lines are ignored.
 | Turn screen off | `--turn-screen-off` |
 | No audio | `--no-audio` |
 | New display | `--new-display` |
+
+The **Global scrcpy options** section can enable a launcher-wide
+`--window-height=<pixels>` override for every session. When enabled, it replaces
+any per-session `--window-height` value at launch; when disabled, each session's
+saved arguments are launched unchanged. The setting is stored in the main
+configuration and is not included in session-only exports.
 
 Quick controls update matching arguments and preserve unrelated advanced
 arguments. You may add any option supported by the selected scrcpy version. The
@@ -175,7 +181,7 @@ the backup, and unsupported format versions are rejected without partial import.
 
 ## Configuration and recovery
 
-Save writes schema version 2 and preserves the previous valid file as
+Save writes schema version 3 and preserves the previous valid file as
 `config.json.bak`. An invalid primary file never replaces a valid backup.
 
 If startup cannot load the primary configuration, the recovery prompt can:
@@ -192,9 +198,11 @@ Advanced schema example:
 
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "scrcpy_mode": "bundled",
   "scrcpy_path": "scrcpy.exe",
+  "window_height_enabled": true,
+  "window_height": 720,
   "sessions": [
     {
       "name": "Phone",
@@ -213,7 +221,7 @@ a newer unsupported schema are rejected without rewriting them.
 
 ## Bundled and custom scrcpy
 
-Bundled mode uses the packaged scrcpy 4.1 distribution under `tools\scrcpy`.
+Bundled mode uses the packaged scrcpy 5.0.1 distribution under `tools\scrcpy`.
 Before first use in each launcher or Settings process, the complete inventory is
 checked against compiled-in SHA-256 hashes. A missing, changed, or unexpected
 file is rejected and should be repaired by rerunning the trusted installer.
@@ -247,9 +255,16 @@ device identifiers, or application inventories.
 
 ### Installing updates
 
-Stop all scrcpy sessions and stop the ADB server before updating, then quit the
-tray. Running a newer installer preserves installed configuration. Rerunning
-the same installer repairs missing application files.
+Use **Stop all scrcpy sessions** and **Stop ADB server** from the tray before
+updating, then choose **Quit**. Quit alone leaves running scrcpy sessions and
+the ADB server active; they can lock bundled files during an upgrade. Running
+a newer installer preserves installed configuration. Rerunning the same
+installer repairs missing application files.
+
+For PortableApps upgrades, install the newer `.paf.exe` into the same directory
+after stopping those processes. If the installer reports that it cannot write
+`AdbWinApi.dll`, stop the ADB server from that installation and choose
+**Retry**. Do not choose **Ignore**, which could leave mixed runtime files.
 
 For portable updates, extract the new ZIP over the old portable directory only
 after quitting. The release ZIP does not contain `config.json`.

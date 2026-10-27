@@ -15,10 +15,18 @@ from src.settings import (
     _connected_serial_for_selection,
     _detect_devices_for_selection,
     _is_current_app_result,
+    _window_height_for_save,
 )
 
 
 class SettingsLogicTests(unittest.TestCase):
+    def test_disabled_window_height_ignores_invalid_inactive_text(self) -> None:
+        self.assertEqual(_window_height_for_save(False, "not a number", 720), 720)
+
+    def test_enabled_window_height_requires_a_whole_number(self) -> None:
+        with self.assertRaisesRegex(ValueError, "whole number"):
+            _window_height_for_save(True, "not a number", 720)
+
     def test_connected_serial_requires_an_explicit_online_device(self) -> None:
         devices = [
             Device("ONLINE", "device"),

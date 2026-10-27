@@ -6,10 +6,29 @@ import unittest
 from unittest.mock import Mock, patch
 
 from src import tray
+from src.config import Session
 from src.winui import DialogChoice
 
 
 class TrayActionTests(unittest.TestCase):
+    @patch("src.tray.launch_session")
+    @patch("src.tray._resolve_configured_scrcpy", return_value="C:/scrcpy.exe")
+    def test_global_window_height_is_applied_to_all_launched_sessions(
+        self, _resolve, launch
+    ) -> None:
+        config = Mock()
+        config.window_height_enabled = True
+        config.window_height = 720
+        session = Session("Phone", ["--window-height=480", "--no-audio"])
+
+        tray._launch_configured_session(config, session)
+
+        launch.assert_called_once()
+        self.assertEqual(
+            launch.call_args.args[1],
+            ["--window-height=720", "--no-audio"],
+        )
+
     @patch("src.tray.shutil.which", return_value="adb.exe")
     @patch("src.tray._resolve_configured_scrcpy")
     def test_adb_lookup_reuses_menu_scrcpy_resolution(self, resolve, which) -> None:

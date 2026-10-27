@@ -1,6 +1,8 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "scrcpy_mode": "bundled",
   "scrcpy_path": "scrcpy.exe",
+  "window_height_enabled": false,
+  "window_height": 720,
   "sessions": []
 }

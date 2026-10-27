@@ -75,6 +75,14 @@ class LoggingSetupTests(unittest.TestCase):
         self.assertIn("%USERPROFILE%", redacted)
         self.assertGreaterEqual(redacted.count("<redacted>"), 3)
 
+    def test_redacts_serials_before_punctuation(self) -> None:
+        redacted = redact_log_message(
+            "scrcpy could not list applications for device ABC123:"
+        )
+
+        self.assertNotIn("ABC123", redacted)
+        self.assertIn("device <redacted>:", redacted)
+
     def test_persistent_formatter_redacts_exception_text(self) -> None:
         with tempfile.TemporaryDirectory() as directory, patch.dict(
             "os.environ", {"LOCALAPPDATA": directory}

@@ -21,6 +21,9 @@ from src.config import (
     MAX_SESSIONS,
     MAX_SESSION_NAME_CHARS,
     MAX_SCRCPY_PATH_CHARS,
+    DEFAULT_WINDOW_HEIGHT,
+    MAX_WINDOW_HEIGHT,
+    MIN_WINDOW_HEIGHT,
     Session,
     UnsupportedSchemaVersionError,
 )
@@ -86,6 +89,55 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(config.scrcpy_mode, SCRCPY_MODE_CUSTOM)
             self.assertEqual(config.scrcpy_path, "C:/tools/scrcpy.exe")
             self.assertTrue(config.needs_migration_save)
+
+    def test_schema_v2_migration_adds_global_window_height_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_config(
+                directory,
+                {
+                    "schema_version": 2,
+                    "scrcpy_mode": SCRCPY_MODE_CUSTOM,
+                    "scrcpy_path": "C:/tools/scrcpy.exe",
+                    "sessions": [],
+                },
+            )
+
+            config = Config(path)
+
+            self.assertFalse(config.window_height_enabled)
+            self.assertEqual(config.window_height, DEFAULT_WINDOW_HEIGHT)
+            self.assertTrue(config.needs_migration_save)
+
+    def test_global_window_height_settings_round_trip(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_config(
+                directory,
+                {"scrcpy_path": "scrcpy.exe", "sessions": []},
+            )
+            config = Config(path)
+            config.set_window_height_enabled(True)
+            config.set_window_height(720)
+            config.save()
+
+            reloaded = Config(path)
+            self.assertTrue(reloaded.window_height_enabled)
+            self.assertEqual(reloaded.window_height, 720)
+
+    def test_global_window_height_rejects_invalid_values(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write_config(
+                directory,
+                {"scrcpy_path": "scrcpy.exe", "sessions": []},
+            )
+            config = Config(path)
+
+            with self.assertRaisesRegex(ConfigValidationError, "boolean"):
+                config.set_window_height_enabled("yes")  # type: ignore[arg-type]
+            for value in (MIN_WINDOW_HEIGHT - 1, MAX_WINDOW_HEIGHT + 1):
+                with self.subTest(value=value), self.assertRaisesRegex(
+                    ConfigValidationError, "between"
+                ):
+                    config.set_window_height(value)
 
     def test_rejects_future_schema_without_changing_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -4,13 +4,19 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import subprocess
 import threading
 import time
 from collections.abc import Callable, Sequence
 
-from .process import hidden_process_kwargs, run_hidden
+from .process import (
+    PROCESS_DIAGNOSTIC_MAX_CHARS,
+    hidden_process_kwargs,
+    read_bounded_text,
+    run_hidden,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +66,7 @@ class _StartupState:
 
     def __init__(self) -> None:
         self.suppress_errors = threading.Event()
+        self.cancelled = threading.Event()
 
 
 class _ProcessManager:
@@ -71,6 +78,7 @@ class _ProcessManager:
 
     def __init__(self) -> None:
         self._processes: list[subprocess.Popen[str]] = []
+        self._startup_states: dict[subprocess.Popen[str], _StartupState] = {}
         self._lock = threading.Lock()
 
     def launch(
@@ -103,9 +111,10 @@ class _ProcessManager:
         except OSError as exc:
             raise SessionLaunchError(f"Windows could not start scrcpy: {exc}") from exc
 
+        startup_state = _StartupState()
         with self._lock:
             self._processes.append(process)
-        startup_state = _StartupState()
+            self._startup_states[process] = startup_state
         threading.Thread(
             target=self._monitor,
             args=(process, on_error, startup_state),
@@ -127,6 +136,10 @@ class _ProcessManager:
         """Stop all scrcpy processes launched by this manager."""
         with self._lock:
             processes = list(self._processes)
+            for process in processes:
+                state = self._startup_states.get(process)
+                if state is not None:
+                    state.cancelled.set()
 
         stopped = 0
         for process in processes:
@@ -183,7 +196,11 @@ class _ProcessManager:
         disconnection or session shutdown.
         """
         try:
-            _stdout, stderr = process.communicate()
+            if not isinstance(process.stderr, io.IOBase):
+                _stdout, stderr = process.communicate()
+            else:
+                stderr = read_bounded_text(process.stderr, PROCESS_DIAGNOSTIC_MAX_CHARS)
+                returncode = process.wait()
             returncode = process.returncode
         except OSError as exc:
             stderr = f"Could not monitor scrcpy: {exc}"
@@ -194,6 +211,7 @@ class _ProcessManager:
                     self._processes.remove(process)
                 except ValueError:
                     pass
+                self._startup_states.pop(process, None)
 
         if returncode == 0:
             return
@@ -206,7 +224,9 @@ class _ProcessManager:
             message = f"{message}\n\n{detail}"
         error = SessionLaunchError(message)
         logger.error("scrcpy exited with code %s", code)
-        if startup_state is not None and startup_state.suppress_errors.is_set():
+        if startup_state is not None and (
+            startup_state.suppress_errors.is_set() or startup_state.cancelled.is_set()
+        ):
             logger.info("Suppressing post-startup scrcpy error for process %s", process.pid)
             return
         if on_error is not None:
