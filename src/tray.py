@@ -26,6 +26,7 @@ from .launcher import (
 from .project_links import LATEST_RELEASE_URL, REPOSITORY_URL
 from .runtime import resource_path, settings_launch_spec
 from .scrcpy_runtime import ScrcpyResolutionError, resolve_scrcpy
+from .scrcpy_options import apply_global_window_height
 from .version import APP_VERSION
 from .winui import (
     DialogChoice,
@@ -303,10 +304,20 @@ def _stop_adb_server(config: Config) -> None:
 def _launch_configured_session(config: Config, session: Session) -> None:
     scrcpy_path = _resolve_configured_scrcpy(config, report_error=True)
     if scrcpy_path is not None:
-        _launch_session(scrcpy_path, session)
+        if config.window_height_enabled is True:
+            args = apply_global_window_height(
+                session.args,
+                enabled=True,
+                height=config.window_height,
+            )
+            _launch_session(scrcpy_path, session, args=args)
+        else:
+            _launch_session(scrcpy_path, session)
 
 
-def _launch_session(scrcpy_path: str, session: Session) -> None:
+def _launch_session(
+    scrcpy_path: str, session: Session, *, args: list[str] | None = None
+) -> None:
     def report_process_error(exc: SessionLaunchError) -> None:
         logger.error("A configured session failed")
         show_error(
@@ -315,7 +326,7 @@ def _launch_session(scrcpy_path: str, session: Session) -> None:
         )
 
     try:
-        launch_session(scrcpy_path, session.args, report_process_error)
+        launch_session(scrcpy_path, session.args if args is None else args, report_process_error)
     except SessionLaunchError as exc:
         report_process_error(exc)
 
@@ -490,7 +501,6 @@ _tray_icon_handle = 0
 
 
 def run_tray(config: Config) -> None:
-    """Run the native notification-area loop for the supplied configuration."""
     """Create a pywin32 tray icon and run the message loop."""
     global _state, _taskbar_created_message, _tray_title, _tray_icon_handle
 

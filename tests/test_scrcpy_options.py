@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import unittest
 
-from src.scrcpy_options import get_value, has_flag, set_flag, set_value
+from src.scrcpy_options import (
+    apply_global_window_height,
+    get_value,
+    has_flag,
+    set_flag,
+    set_value,
+)
 
 
 class ScrcpyOptionTests(unittest.TestCase):
@@ -31,6 +37,59 @@ class ScrcpyOptionTests(unittest.TestCase):
         self.assertEqual(
             set_flag(args, "--new-display", False, allow_value=True),
             ["--start-app=com.example"],
+        )
+
+    def test_get_value_reads_split_form(self) -> None:
+        self.assertEqual(get_value(["--serial", "ABC", "--no-audio"], "--serial"), "ABC")
+
+    def test_get_value_does_not_consume_another_option_as_a_split_value(self) -> None:
+        self.assertEqual(
+            get_value(["--serial", "--no-audio"], "--serial"),
+            "",
+        )
+
+    def test_set_value_replaces_split_form_and_preserves_order(self) -> None:
+        args = ["--before", "--serial", "ABC", "--after"]
+        self.assertEqual(
+            set_value(args, "--serial", "XYZ"),
+            ["--before", "--serial=XYZ", "--after"],
+        )
+
+    def test_set_value_removes_mixed_duplicate_forms(self) -> None:
+        args = ["--serial=one", "--keep", "--serial", "two", "--serial=three"]
+        self.assertEqual(set_value(args, "--serial", ""), ["--keep"])
+
+    def test_set_value_missing_split_value_removes_only_option(self) -> None:
+        self.assertEqual(
+            set_value(["--before", "--serial"], "--serial", "new"),
+            ["--before", "--serial=new"],
+        )
+        self.assertEqual(
+            set_value(["--before", "--serial"], "--serial", ""),
+            ["--before"],
+        )
+
+    def test_set_value_does_not_consume_following_option_as_missing_value(self) -> None:
+        args = ["--serial", "--window-title", "Title", "--after"]
+        self.assertEqual(
+            set_value(args, "--serial", "ABC"),
+            ["--serial=ABC", "--window-title", "Title", "--after"],
+        )
+
+    def test_global_window_height_replaces_existing_forms_when_enabled(self) -> None:
+        args = ["--serial=ABC", "--window-height", "480", "--window-height=600"]
+
+        self.assertEqual(
+            apply_global_window_height(args, enabled=True, height=720),
+            ["--serial=ABC", "--window-height=720"],
+        )
+
+    def test_global_window_height_preserves_session_args_when_disabled(self) -> None:
+        args = ["--window-height=600"]
+
+        self.assertEqual(
+            apply_global_window_height(args, enabled=False, height=720),
+            args,
         )
 
 

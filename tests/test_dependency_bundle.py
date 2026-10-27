@@ -57,16 +57,16 @@ def write_bundle(path: Path, files: dict[str, bytes], extra: dict[str, bytes] | 
 class DependencyBundleTests(unittest.TestCase):
     def test_pinned_manifest_matches_official_scrcpy_release(self) -> None:
         manifest = stage_scrcpy.load_manifest(
-            PROJECT_ROOT / "packaging" / "dependencies" / "scrcpy-win64-v4.1.json"
+            PROJECT_ROOT / "packaging" / "dependencies" / "scrcpy-win64-v5.0.1.json"
         )
         bundle = manifest["bundle"]
 
-        self.assertEqual(bundle["version"], "4.1")
+        self.assertEqual(bundle["version"], "5.0.1")
         self.assertEqual(bundle["architecture"], "win64")
-        self.assertEqual(bundle["source_commit"], "2926c06")
+        self.assertEqual(bundle["source_commit"], "a60891a")
         self.assertEqual(
             bundle["archive_sha256"],
-            "5b12172b3264b2889f4583ee64752ce832e29bc8b1089dca81093459697165db",
+            "b12a2c4ee8be317422451fc7dcf8ee20a71b5ea7ef9ad73ddd825a25316227a5",
         )
         self.assertNotIn("latest", bundle["archive_url"])
         for required in ("scrcpy.exe", "scrcpy-server", "adb.exe", "SDL3.dll"):

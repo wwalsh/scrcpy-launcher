@@ -92,6 +92,16 @@ def _selected_start_app_value(current_value: str, package_name: str) -> str:
     return f"+{package_name}" if force_stop else package_name
 
 
+def _window_height_for_save(enabled: bool, text: str, current_height: int) -> int:
+    """Return the height to persist, ignoring inactive-field text when disabled."""
+    if not enabled:
+        return current_height
+    try:
+        return int(text.strip())
+    except ValueError as exc:
+        raise ValueError("Window height must be a whole number of pixels.") from exc
+
+
 class _SettingsDialog:
     """Modal tkinter dialog for editing scrcpy-launcher configuration."""
 
@@ -175,13 +185,13 @@ class _SettingsDialog:
 
         outer = ttk.Frame(self._dialog, padding=12)
         outer.grid(row=0, column=0, sticky="nsew")
-        outer.rowconfigure(2, weight=1)
+        outer.rowconfigure(3, weight=1)
         outer.columnconfigure(1, weight=1)
 
         self._build_runtime_sections(outer)
 
         list_frame = ttk.LabelFrame(outer, text="Sessions", padding=10)
-        list_frame.grid(row=2, column=0, sticky="nsew", padx=(0, 10))
+        list_frame.grid(row=3, column=0, sticky="nsew", padx=(0, 10))
         list_frame.rowconfigure(0, weight=1)
         list_frame.columnconfigure(0, weight=1)
         self._listbox = tk.Listbox(
@@ -236,7 +246,7 @@ class _SettingsDialog:
         ).grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
         edit_frame = ttk.LabelFrame(outer, text="Session details", padding=10)
-        edit_frame.grid(row=2, column=1, sticky="nsew")
+        edit_frame.grid(row=3, column=1, sticky="nsew")
         edit_frame.rowconfigure(5, weight=1)
         edit_frame.columnconfigure(0, weight=1)
 
@@ -359,7 +369,7 @@ class _SettingsDialog:
         )
 
         footer = ttk.Frame(outer)
-        footer.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        footer.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(12, 0))
         ttk.Label(footer, text="Ctrl+S to save  •  Esc to cancel").pack(side=tk.LEFT)
         ttk.Button(footer, text="Cancel", command=self._cancel).pack(side=tk.RIGHT)
         ttk.Button(footer, text="Save", command=self._save).pack(side=tk.RIGHT, padx=(0, 8))
@@ -399,7 +409,7 @@ class _SettingsDialog:
         self._browse_button.grid(row=3, column=2, pady=(4, 0))
 
         windows_frame = ttk.LabelFrame(outer, text="Windows", padding=10)
-        windows_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        windows_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         self._autostart_var = tk.BooleanVar(value=self._autostart_initial)
         self._autostart_check = ttk.Checkbutton(
             windows_frame,
@@ -413,6 +423,29 @@ class _SettingsDialog:
             row=1, column=0, sticky="w", pady=(2, 0)
         )
 
+        global_frame = ttk.LabelFrame(outer, text="Global scrcpy options", padding=10)
+        global_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        global_frame.columnconfigure(1, weight=1)
+        self._window_height_enabled_var = tk.BooleanVar(value=False)
+        self._window_height_check = ttk.Checkbutton(
+            global_frame,
+            text="Set window height for all sessions",
+            variable=self._window_height_enabled_var,
+            command=self._update_window_height_controls,
+        )
+        self._window_height_check.grid(row=0, column=0, columnspan=2, sticky="w")
+        ttk.Label(global_frame, text="Window height").grid(
+            row=1, column=0, sticky="w", padx=(0, 8), pady=(6, 0)
+        )
+        self._window_height_var = tk.StringVar()
+        self._window_height_entry = ttk.Entry(
+            global_frame, textvariable=self._window_height_var, width=12
+        )
+        self._window_height_entry.grid(row=1, column=1, sticky="w", pady=(6, 0))
+        ttk.Label(global_frame, text="pixels; e.g. 720").grid(
+            row=1, column=2, sticky="w", padx=(8, 0), pady=(6, 0)
+        )
+
     def _center_dialog(self) -> None:
         self._dialog.update_idletasks()
         width = max(self._dialog.winfo_reqwidth(), 820)
@@ -424,6 +457,9 @@ class _SettingsDialog:
     def _load_state(self) -> None:
         self._mode_var.set(self._config.scrcpy_mode)
         self._path_var.set(self._config.scrcpy_path)
+        self._window_height_enabled_var.set(self._config.window_height_enabled)
+        self._window_height_var.set(str(self._config.window_height))
+        self._update_window_height_controls()
         self._update_scrcpy_controls()
         for session in self._config.sessions:
             self._listbox.insert(tk.END, session.name)
@@ -540,6 +576,11 @@ class _SettingsDialog:
         )
         self._write_args(args)
 
+    def _update_window_height_controls(self) -> None:
+        """Enable or disable editing of the global window-height value."""
+        state = tk.NORMAL if self._window_height_enabled_var.get() else tk.DISABLED
+        self._window_height_entry.configure(state=state)
+
     def _on_device_selected(self, _event=None) -> None:
         if self._syncing_controls:
             return
@@ -604,6 +645,9 @@ class _SettingsDialog:
                 self._device_results.put((request, devices, ""))
             except (DeviceDiscoveryError, ScrcpyResolutionError) as exc:
                 self._device_results.put((request, None, str(exc)))
+            except Exception as exc:
+                logger.exception("Unexpected device discovery failure")
+                self._device_results.put((request, None, f"Device discovery failed: {exc}"))
 
         if self._device_future is not None:
             self._device_future.cancel()
@@ -746,6 +790,11 @@ class _SettingsDialog:
                 self._app_results.put((request, key, apps, "", open_after_load))
             except AppDiscoveryError as exc:
                 self._app_results.put((request, key, None, str(exc), open_after_load))
+            except Exception as exc:
+                logger.exception("Unexpected application discovery failure")
+                self._app_results.put(
+                    (request, key, None, f"Application discovery failed: {exc}", open_after_load)
+                )
 
         if self._app_future is not None:
             self._app_future.cancel()
@@ -1090,6 +1139,20 @@ class _SettingsDialog:
             self._path_entry.focus_set()
             return
         try:
+            window_height = _window_height_for_save(
+                self._window_height_enabled_var.get(),
+                self._window_height_var.get(),
+                self._config.window_height,
+            )
+        except ValueError as exc:
+            messagebox.showerror(
+                "Invalid Window Height",
+                str(exc),
+                parent=self._dialog,
+            )
+            self._window_height_entry.focus_set()
+            return
+        try:
             resolve_scrcpy(new_mode, new_path)
         except ScrcpyResolutionError as exc:
             if new_mode == SCRCPY_MODE_BUNDLED:
@@ -1116,6 +1179,8 @@ class _SettingsDialog:
         try:
             self._config.set_scrcpy_mode(new_mode)
             self._config.set_scrcpy_path(new_path)
+            self._config.set_window_height_enabled(self._window_height_enabled_var.get())
+            self._config.set_window_height(window_height)
             self._config.save()
         except (ConfigError, OSError) as exc:
             logger.exception("Could not save configuration")

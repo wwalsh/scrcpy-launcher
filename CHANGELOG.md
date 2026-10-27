@@ -5,6 +5,32 @@ All notable changes to the public scrcpy-launcher releases are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-10-24
+
+### Added
+
+- Added an optional global window-height override for scrcpy sessions, with
+  migration of existing configuration to schema 3.
+
+### Changed
+
+- Updated the bundled runtime to scrcpy 5.0.1 and refreshed its dependency
+  security review, including ADB, FFmpeg, SDL, and dav1d components.
+- Hardened process execution, bounded diagnostic capture, and redacted device
+  serials from logs and error messages.
+
+### Security
+
+- Updated locked setuptools to 84.1.0 to address a Windows legacy wheel
+  installation path escape (GHSA-xmj3-9gf7-h52w).
+
+### Fixed
+
+- Disabling autostart now removes a stale launcher registry entry after the
+  installation path changes.
+- Disabled window-height settings no longer reject invalid inactive text or
+  overwrite the saved valid value.
+
 ## [0.8.0] - 2026-08-29
 
 ### Changed
@@ -86,6 +112,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   dependency controls, bundled-runtime integrity verification, targeted log
   redaction, and hardened installer cleanup.
 
+[0.9.0]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.6...v0.8.0
 [0.7.6]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/wwalsh/scrcpy-launcher/compare/v0.7.4...v0.7.5

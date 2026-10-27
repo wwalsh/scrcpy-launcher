@@ -5,6 +5,22 @@ PortableApps.com release. Test with production
 artifacts from `dist\artifacts`, not the PyInstaller staging directory. Preserve a
 copy of any real configuration before testing.
 
+## v0.9.0 acceptance record
+
+`v0.9.0` adds an optional global window-height override, updates the bundled
+scrcpy runtime to 5.0.1, and hardens process diagnostics and autostart cleanup.
+
+| Check | Result |
+| --- | --- |
+| Automated tests | Passed 2026-10-24: 300 pytest tests and 233 subtests; 296 unittest tests |
+| Dependency security policy | Passed 2026-10-24; review dated 2026-10-19, 45-day limit retained |
+| Locked Python dependency advisory audit | Found GHSA-xmj3-9gf7-h52w in setuptools 84.0.0; updated to 84.1.0 and reran audit |
+| Complete production build and release lifecycle verification | Passed 2026-10-24 for installer, portable ZIP, and PortableApps package |
+| Artifact SHA-256 checksum files | Verified 2026-10-24 for all three distributables |
+| PortableApps first-run and same-version reinstall | Passed 2026-10-24 in an isolated directory; a distinctive session and `Data\config.json` hash were preserved |
+| Simple portable ZIP upgrade | Passed 2026-10-24 in an isolated directory; a distinctive session and adjacent `config.json` hash were preserved |
+| Remaining manual matrix | Not run: installed-app repair/uninstall, side-by-side operation, and Explorer restart |
+
 ## v0.7.3 acceptance record
 
 `v0.7.3` completes the Milestone 8 maintenance phase. It removes obsolete UI
@@ -82,11 +98,12 @@ when the verified cache is already populated:
 ## Manual matrix
 
 Use a distinctive session name and custom scrcpy path so preservation failures
-are obvious. Quit the tray before running Setup or Uninstall.
+are obvious. Stop all scrcpy sessions and the selected installation's ADB server,
+then quit the tray before running Setup, Uninstall, or a PortableApps upgrade.
 
 | Scenario | Procedure | Pass condition |
 | --- | --- | --- |
-| Fresh install | Remove or temporarily rename the launcher's AppData config, then install | A schema 2 bundled-mode config is created and bundled scrcpy launches |
+| Fresh install | Remove or temporarily rename the launcher's AppData config, then install | A schema 3 bundled-mode config is created and bundled scrcpy launches |
 | Custom upgrade | Select custom mode, add a session, and run the newer installer | Mode, path, sessions, and arguments are unchanged |
 | Bundled upgrade | Select bundled mode, add a session, and run the newer installer | Sessions are unchanged and the packaged scrcpy version is current |
 | Repair | Delete `tools\scrcpy\scrcpy.exe`, then rerun the same installer | Setup restores scrcpy; configuration is byte-for-byte unchanged |
@@ -95,7 +112,7 @@ are obvious. Quit the tray before running Setup or Uninstall.
 | Portable first run | Extract the ZIP into a new folder and launch it | Adjacent `config.json` is created in bundled mode; AppData config is untouched |
 | Portable upgrade | Edit adjacent `config.json`, then extract a newer ZIP over the folder | Adjacent config is byte-for-byte unchanged and the new application launches |
 | PortableApps first run | Install the `.paf.exe` into a new PortableApps directory and launch it | `Data\config.json` is created in bundled mode; installed and simple-portable configs are untouched |
-| PortableApps upgrade | Add a distinctive session, quit the tray, then install the same or newer `.paf.exe` to the same directory | The session and `Data\config.json` are preserved and the updated application launches |
+| PortableApps upgrade | Add a distinctive session, stop all scrcpy sessions and the ADB server, quit the tray, then install the same or newer `.paf.exe` to the same directory | The session and `Data\config.json` are preserved and the updated application launches |
 | Side-by-side | Run installed and portable editions separately | Installed edition uses AppData; portable edition uses only its adjacent config |
 | Explorer restart | With the tray running, restart **Windows Explorer** twice from Task Manager | The icon returns once after each restart; its menu, Settings, and Quit remain responsive |
 

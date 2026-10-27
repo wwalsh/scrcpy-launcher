@@ -1,57 +1,58 @@
 {
   "schema_version": 1,
-  "reviewed_on": "2026-08-22",
+  "reviewed_on": "2026-10-19",
   "max_age_days": 45,
   "components": [
     {
       "name": "scrcpy client and server",
-      "version": "4.1",
+      "version": "5.0.1",
       "status": "reviewed",
       "advisory_sources": [
         "https://github.com/Genymobile/scrcpy/security/advisories",
-        "https://github.com/Genymobile/scrcpy/releases/tag/v4.1"
+        "https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1"
       ],
-      "notes": "Version and upstream security/release channels reviewed for the bundled baseline."
+      "notes": "Official v5.0.1 Windows x64 archive SHA-256 matched upstream's published hash; no published scrcpy advisory. Release replaces the 4.1 bundle and updates its native libraries."
     },
     {
       "name": "Android SDK Platform-Tools (ADB)",
-      "version": "37.0.0",
+      "version": "37.0.1",
       "status": "reviewed",
       "advisory_sources": [
         "https://developer.android.com/tools/releases/platform-tools",
         "https://android.googlesource.com/platform/packages/modules/adb/"
       ],
-      "notes": "Bundled version checked against the official Platform-Tools release channel."
+      "notes": "Google's 37.0.1 release notes reviewed; bundled adb.exe hash matches the official Windows Platform-Tools archive."
     },
     {
       "name": "FFmpeg",
-      "version": "8.1.2",
+      "version": "9.0.2",
       "status": "reviewed",
       "advisory_sources": [
         "https://ffmpeg.org/security.html",
-        "https://ffmpeg.org/download.html"
+        "https://ffmpeg.org/download.html",
+        "https://github.com/Genymobile/scrcpy/blob/v5.0.1/app/deps/ffmpeg.sh"
       ],
-      "notes": "Upstream security notices and the exact bundled release require review at each refresh."
+      "notes": "Updated from 8.1.2 after reviewing 2026 FFmpeg CVEs. Scrcpy's verified 9.0.2 build disables network, Vulkan, and all components by default, then enables only selected raw video/audio decoders, image2 demuxer, local file protocol, and output muxers. Reported SFTP, RTSP, HLS, DASH, MOV input, Vulkan HEVC, and metadata remuxing issues (including CVE-2026-64831 and CVE-2026-107675/107676/107677/107678/107696) are outside the enabled input and network paths; continue monitoring for fixes affecting enabled decoders."
     },
     {
       "name": "dav1d",
-      "version": "1.5.3",
+      "version": "1.5.4",
       "status": "reviewed",
       "advisory_sources": [
         "https://code.videolan.org/videolan/dav1d/-/security",
         "https://code.videolan.org/videolan/dav1d/-/tags"
       ],
-      "notes": "Upstream security and release channels reviewed for the bundled baseline."
+      "notes": "Version 1.5.4 is identified in the official scrcpy 5.0.1 release. No applicable advisory was found in the available upstream release information; the VideoLAN security page was unavailable during this review."
     },
     {
       "name": "SDL",
-      "version": "3.4.12",
+      "version": "3.4.18",
       "status": "reviewed",
       "advisory_sources": [
         "https://github.com/libsdl-org/SDL/security/advisories",
         "https://github.com/libsdl-org/SDL/releases"
       ],
-      "notes": "Upstream advisories and releases reviewed for the bundled baseline."
+      "notes": "Current upstream stable 3.4.18 release and published advisory list reviewed; no published SDL advisory."
     },
     {
       "name": "libusb",
@@ -61,7 +62,7 @@
         "https://github.com/libusb/libusb/security/advisories",
         "https://github.com/libusb/libusb/releases"
       ],
-      "notes": "Upstream advisories and releases reviewed for the bundled baseline."
+      "notes": "Upstream 1.0.30 release and advisory list reviewed; this release includes the descriptor parsing fix for CVE-2026-23679."
     },
     {
       "name": "zlib",
@@ -71,7 +72,7 @@
         "https://zlib.net/",
         "https://github.com/madler/zlib/releases"
       ],
-      "notes": "Build provenance and upstream releases require review when the scrcpy bundle changes."
+      "notes": "Upstream 1.3.2 release and security changes reviewed. zlib is statically linked by upstream's Windows FFmpeg build, so its exact build version is not identified by the archive; continue verifying provenance when the bundle changes."
     }
   ]
 }

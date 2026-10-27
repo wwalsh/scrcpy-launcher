@@ -123,7 +123,7 @@ try {
     if (-not $SkipBundledTools) {
         $stageArguments = @(
             "packaging\stage_scrcpy.py",
-            "--manifest", "packaging\dependencies\scrcpy-win64-v4.1.json",
+            "--manifest", "packaging\dependencies\scrcpy-win64-v5.0.1.json",
             "--cache-dir", $resolvedDependencyCache,
             "--destination", (Join-Path $packageDirectory "tools\scrcpy"),
             "--source-artifacts-dir", (Join-Path $artifactDirectory "sources"),

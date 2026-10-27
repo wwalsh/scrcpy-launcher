@@ -61,6 +61,8 @@ def _validate_default_config(data: bytes, description: str) -> None:
         "schema_version": CURRENT_SCHEMA_VERSION,
         "scrcpy_mode": SCRCPY_MODE_BUNDLED,
         "scrcpy_path": "scrcpy.exe",
+        "window_height_enabled": False,
+        "window_height": 720,
         "sessions": [],
     }
     if config != expected:

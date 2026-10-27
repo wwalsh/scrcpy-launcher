@@ -34,18 +34,18 @@ that upstream inventory with a summary.
 
 ## Bundled scrcpy distribution
 
-Release builds bundle the unmodified official scrcpy 4.1 Windows x64 archive
+Release builds bundle the unmodified official scrcpy 5.0.1 Windows x64 archive
 under `tools/scrcpy`. The acquisition manifest pins the release URL, archive
 SHA-256, complete file inventory, and per-file hashes. The generated
 `tools/scrcpy/BUNDLE-METADATA.json` records the same provenance in each package.
 
 | Component | Distributed files or role | License | Source and notices |
 | --- | --- | --- | --- |
-| scrcpy client and `scrcpy-server` 4.1 | `scrcpy.exe`, `scrcpy-server`, scripts and images | Apache-2.0 | <https://github.com/Genymobile/scrcpy/tree/v4.1>; see `tools/scrcpy/LICENSE.txt` and `licenses/Apache-2.0.txt`. |
-| Android SDK Platform-Tools 37.0.0 | `adb.exe`, `AdbWinApi.dll`, `AdbWinUsbApi.dll` | Apache-2.0 and notices identified by the upstream distribution | <https://android.googlesource.com/platform/packages/modules/adb/>; see `licenses/Apache-2.0.txt` and generated `licenses/Android-Platform-Tools-NOTICE.txt`. |
-| FFmpeg 8.1.2 | `avcodec-62.dll`, `avformat-62.dll`, `avutil-60.dll`, `swresample-6.dll` | LGPL-2.1-or-later for the configuration used by scrcpy | <https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz>; see generated `licenses/FFmpeg-LGPL-2.1.txt`. The verified source archive is published beside release artifacts. |
-| dav1d 1.5.3 | Statically linked AV1 decoder used by the FFmpeg libraries | BSD-2-Clause | <https://code.videolan.org/videolan/dav1d/-/tree/1.5.3>; see `licenses/dav1d-BSD-2-Clause.txt`. |
-| SDL 3.4.12 | `SDL3.dll` | Zlib | <https://github.com/libsdl-org/SDL/tree/release-3.4.12>; see generated `licenses/SDL-Zlib.txt`. The verified source archive is published beside release artifacts. |
+| scrcpy client and `scrcpy-server` 5.0.1 | `scrcpy.exe`, `scrcpy-server`, scripts and images | Apache-2.0 | <https://github.com/Genymobile/scrcpy/tree/v5.0.1>; see `tools/scrcpy/LICENSE.txt` and `licenses/Apache-2.0.txt`. |
+| Android SDK Platform-Tools 37.0.1 | `adb.exe`, `AdbWinApi.dll`, `AdbWinUsbApi.dll` | Apache-2.0 and notices identified by the upstream distribution | <https://android.googlesource.com/platform/packages/modules/adb/>; see `licenses/Apache-2.0.txt` and generated `licenses/Android-Platform-Tools-NOTICE.txt`. |
+| FFmpeg 9.0.2 | `avcodec-63.dll`, `avformat-63.dll`, `avutil-61.dll`, `swresample-7.dll` | LGPL-2.1-or-later for the configuration used by scrcpy | <https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz>; see generated `licenses/FFmpeg-LGPL-2.1.txt`. The verified source archive is published beside release artifacts. |
+| dav1d 1.5.4 | Statically linked AV1 decoder used by the FFmpeg libraries | BSD-2-Clause | <https://code.videolan.org/videolan/dav1d/-/tree/1.5.4>; see `licenses/dav1d-BSD-2-Clause.txt`. |
+| SDL 3.4.18 | `SDL3.dll` | Zlib | <https://github.com/libsdl-org/SDL/tree/release-3.4.18>; see generated `licenses/SDL-Zlib.txt`. The verified source archive is published beside release artifacts. |
 | libusb 1.0.30 | `libusb-1.0.dll` | LGPL-2.1-or-later | <https://github.com/libusb/libusb/tree/v1.0.30>; see generated `licenses/libusb-LGPL-2.1.txt`. The verified source archive is published beside release artifacts. |
 | zlib | Statically linked compression support in the FFmpeg build | Zlib | <https://zlib.net/>; see `licenses/Zlib.txt`. |
 

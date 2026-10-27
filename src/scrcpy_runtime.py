@@ -91,6 +91,12 @@ def validate_bundled_installation(*, root: Path | str | None = None) -> Path:
             "scrcpy-launcher."
         ) from exc
 
+    if not isinstance(metadata, dict):
+        raise ScrcpyResolutionError(
+            "Bundled scrcpy metadata must be a JSON object. Repair or reinstall "
+            "scrcpy-launcher."
+        )
+
     bundle = metadata.get("bundle")
     if not isinstance(bundle, dict) or bundle.get("version") != BUNDLED_SCRCPY_VERSION:
         raise ScrcpyResolutionError(

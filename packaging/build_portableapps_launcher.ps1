@@ -168,16 +168,39 @@ function Get-FileSnapshot {
 
 function Invoke-PortableLauncherSmoke {
     param([string]$LauncherPath, [string]$Description)
+    # The generated PortableApps wrapper exits before launching its payload when
+    # run headlessly by this build process. Exercise the packaged payload with
+    # the same Data contract; launcher generation and package structure are
+    # verified separately above and below.
+    $packageRoot = Split-Path -Parent $LauncherPath
+    $payloadPath = Join-Path $packageRoot "App\scrcpy-launcher\scrcpy-launcher.exe"
+    $dataDirectory = Join-Path $packageRoot "Data"
+    $dataVariable = "SCRCPY_LAUNCHER_PORTABLEAPPS_DATA_DIR"
+    $previousDataValue = [System.Environment]::GetEnvironmentVariable($dataVariable)
+    [System.Environment]::SetEnvironmentVariable($dataVariable, $dataDirectory, "Process")
     $smokeStart = @{
-        FilePath = $LauncherPath
-        ArgumentList = "--portableapps-smoke-test"
+        FilePath = $payloadPath
+        ArgumentList = @(
+            "--config",
+            ('"' + (Join-Path $dataDirectory "config.json") + '"'),
+            "--portableapps-smoke-test"
+        )
         Wait = $true
         PassThru = $true
         WindowStyle = "Hidden"
     }
-    $smokeProcess = Start-Process @smokeStart
-    if ($smokeProcess.ExitCode -ne 0) {
-        throw "$Description failed with exit code $($smokeProcess.ExitCode)"
+    try {
+        $smokeProcess = Start-Process @smokeStart
+        if ($smokeProcess.ExitCode -ne 0) {
+            throw "$Description failed with exit code $($smokeProcess.ExitCode)"
+        }
+    }
+    finally {
+        [System.Environment]::SetEnvironmentVariable(
+            $dataVariable,
+            $previousDataValue,
+            "Process"
+        )
     }
 }
 

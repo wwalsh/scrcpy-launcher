@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
-"""Discover applications through scrcpy 4.1 ``--list-apps``."""
+"""Discover applications through scrcpy ``--list-apps``."""
 
 from __future__ import annotations
 
@@ -111,7 +111,7 @@ def list_device_apps(
         logger.warning("Could not parse scrcpy app list: %s", exc)
         raise AppDiscoveryError(
             "The selected scrcpy executable returned an unsupported application list "
-            f"format: {exc}. Use bundled scrcpy 4.1 or a compatible newer custom version."
+            f"format: {exc}. Use bundled scrcpy 5.0.1 or a compatible newer custom version."
         ) from exc
     logger.info("Discovered %d launchable applications", len(apps))
     return apps
@@ -147,7 +147,7 @@ def _failure_message(serial: str, stdout: str, stderr: str) -> str:
     if "list-apps" in normalized and any(marker in normalized for marker in unsupported_markers):
         return (
             "The selected scrcpy executable does not support --list-apps. "
-            "Use bundled scrcpy 4.1 or a compatible newer custom version."
+            "Use bundled scrcpy 5.0.1 or a compatible newer custom version."
         )
     if "unauthorized" in normalized:
         return (
@@ -170,7 +170,7 @@ def _failure_message(serial: str, stdout: str, stderr: str) -> str:
 
 
 def parse_scrcpy_app_list(output: str) -> list[DeviceApp]:
-    """Return launchable apps from captured scrcpy 4.1 stdout.
+    """Return launchable apps from captured scrcpy stdout.
 
     The parser intentionally requires the ``List of apps:`` header so ordinary
     scrcpy logs or a future incompatible format cannot silently become an empty

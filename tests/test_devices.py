@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import subprocess
+import io
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from src.devices import DeviceDiscoveryError, detect_devices, find_adb, parse_adb_devices
 
@@ -33,20 +34,29 @@ class DeviceTests(unittest.TestCase):
 
         self.assertEqual(devices[0].label, "moto g power 5G 2024 — ABC")
 
-    @patch("src.process.subprocess.run")
+    @patch("src.process.subprocess.Popen")
     @patch("src.devices.find_adb", return_value=Path("adb.exe"))
-    def test_detect_devices_runs_long_listing(self, _find_adb, run) -> None:
-        run.return_value = subprocess.CompletedProcess([], 0, ADB_OUTPUT, "")
+    def test_detect_devices_runs_long_listing(self, _find_adb, popen) -> None:
+        process = Mock()
+        process.stdout = io.StringIO(ADB_OUTPUT)
+        process.stderr = io.StringIO("")
+        process.wait.return_value = 0
+        popen.return_value = process
 
         devices = detect_devices("scrcpy.exe")
 
         self.assertEqual(len(devices), 3)
         _find_adb.assert_called_once_with("scrcpy.exe", allow_path_fallback=True)
-        self.assertEqual(run.call_args.args[0], ["adb.exe", "devices", "-l"])
+        self.assertEqual(popen.call_args.args[0], ["adb.exe", "devices", "-l"])
 
-    @patch("src.process.subprocess.run", side_effect=subprocess.TimeoutExpired("adb", 5))
+    @patch("src.process.subprocess.Popen")
     @patch("src.devices.find_adb", return_value=Path("adb.exe"))
-    def test_reports_timeout(self, _find_adb, _run) -> None:
+    def test_reports_timeout(self, _find_adb, popen) -> None:
+        process = Mock()
+        process.stdout = io.StringIO("")
+        process.stderr = io.StringIO("")
+        process.wait.side_effect = [subprocess.TimeoutExpired("adb", 5), 1]
+        popen.return_value = process
         with self.assertRaisesRegex(DeviceDiscoveryError, "timed out"):
             detect_devices("scrcpy.exe")
 
